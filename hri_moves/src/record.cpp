@@ -35,9 +35,9 @@ class JointsRecorder : public rclcpp::Node {
     jstiff_pub_ = this->create_publisher<nao_lola_command_msgs::msg::JointStiffnesses>(
                   "effectors/joint_stiffnesses", 10);
 
-      jstiff_cmd_.indexes.push_back(nao_lola_sensor_msgs::msg::JointIndexes::LHIPYAWPITCH);
-      jstiff_cmd_.stiffnesses.push_back(1.0);
-      jstiff_pub_->publish(jstiff_cmd_);
+    jstiff_cmd_.indexes.push_back(nao_lola_sensor_msgs::msg::JointIndexes::LHIPYAWPITCH);
+    jstiff_cmd_.stiffnesses.push_back(1.0);
+    jstiff_pub_->publish(jstiff_cmd_);
 
   }
 
@@ -98,10 +98,48 @@ class JointsRecorder : public rclcpp::Node {
 
   }
 
-  void play_cmd_callback(const std_msgs::msg::Bool & msg)  {
+  void record_cmd_callback(const std_msgs::msg::Bool & msg)  {
+      RCLCPP_INFO_STREAM(this->get_logger(), "I heard: '" << msg.data << "' from record_cmd_sub");
+      bool cmd = msg.data;
+
+      if (!recording_ && cmd) {
+
+        for (int i : rec_joint_indexes_) {
+          jstiff_cmd_.indexes.push_back(i);
+          jstiff_cmd_.stiffnesses.push_back(0.0);
+        }
+        jstiff_pub_->publish(jstiff_cmd_);
+        RCLCPP_DEBUG_STREAM(this->get_logger(), "Publishing 0.0 on effectors/joint_stiffnesses");
+        jstiff_cmd_.indexes.clear();
+        jstiff_cmd_.stiffnesses.clear();
+
+        rclcpp::sleep_for(5s);
+
+        recording_ = true;
+        RCLCPP_INFO_STREAM(this->get_logger(), "Start recording");
+
+      } else if (recording_ && !cmd) {
+        // save the data
+        recording_ = false;
+        RCLCPP_INFO_STREAM(this->get_logger(), "Stop recording");
+
+        file_.open("vector_file_.txt", std::ios_base::out);
+        if (file_.is_open()) {
+          for (uint i = 0; i < record_.size()-1; i++) { //-1 to avoid a final \n line
+            file_ << record_[i] << '\n';
+          }
+
+          file_.close();
+        RCLCPP_INFO_STREAM(this->get_logger(), "Joint position saved to file");
+
+
+        } else
+          std::cout << "Unable to open file";
+      }
+    }
+
+    void play_cmd_callback(const std_msgs::msg::Bool & msg)  {
    
-
-
     RCLCPP_INFO_STREAM(this->get_logger(), "I heard: '" << msg.data << "' from play_cmd_sub");
 
     bool cmd = msg.data;
@@ -135,46 +173,6 @@ class JointsRecorder : public rclcpp::Node {
       
     }
   }
-
-    void record_cmd_callback(const std_msgs::msg::Bool & msg)  {
-      RCLCPP_INFO_STREAM(this->get_logger(), "I heard: '" << msg.data << "' from record_cmd_sub");
-      bool cmd = msg.data;
-
-      if (!recording_ && cmd) {
-
-        for (int i : rec_joint_indexes_) {
-          jstiff_cmd_.indexes.push_back(i);
-          jstiff_cmd_.stiffnesses.push_back(0.0);
-        }
-        jstiff_pub_->publish(jstiff_cmd_);
-        RCLCPP_DEBUG_STREAM(this->get_logger(), "Publishing 0.0 on effectors/joint_stiffnesses");
-        jstiff_cmd_.indexes.clear();
-        jstiff_cmd_.stiffnesses.clear();
-
-        rclcpp::sleep_for(5s);
-
-        recording_ = true;
-        RCLCPP_INFO_STREAM(this->get_logger(), "Start recording");
-
-      } else if (recording_ && !cmd) {
-        // save the data
-        recording_ = false;
-        RCLCPP_INFO_STREAM(this->get_logger(), "Stop recording");
-
-        file_.open("vector_file_.pos", std::ios_base::out);
-        if (file_.is_open()) {
-          for (uint i = 0; i < record_.size(); i++) {
-            file_ << record_[i] << '\n';
-          }
-
-          file_.close();
-        RCLCPP_INFO_STREAM(this->get_logger(), "Joint position saved to file");
-
-
-        } else
-          std::cout << "Unable to open file";
-      }
-    }
 
   };
 

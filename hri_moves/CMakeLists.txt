@@ -8,12 +8,60 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nao_lola_sensor_msgs REQUIRED)
 find_package(nao_lola_command_msgs REQUIRED)
+find_package(hri_interfaces REQUIRED)
 
 add_executable(record src/record.cpp)
-ament_target_dependencies(record rclcpp std_msgs nao_lola_sensor_msgs nao_lola_command_msgs)    
+ament_target_dependencies(record 
+  rclcpp
+  std_msgs
+  nao_lola_sensor_msgs
+  nao_lola_command_msgs)    
+
+add_library(action_server SHARED
+  src/joints_play_action_server.cpp)
+target_include_directories(action_server PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_definitions(action_server
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+ament_target_dependencies(action_server
+  "hri_interfaces"
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components"
+  "nao_lola_command_msgs")
+rclcpp_components_register_node(action_server PLUGIN "hri_action_cpp::JointsPlayActionServer" EXECUTABLE joints_play_action_server)
+install(TARGETS
+  action_server
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+add_library(action_client SHARED
+  src/joints_play_action_client.cpp)
+target_include_directories(action_client PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_definitions(action_client
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+ament_target_dependencies(action_client
+  "hri_interfaces"
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components")
+rclcpp_components_register_node(action_client PLUGIN "hri_action_cpp::JointsPlayActionClient" EXECUTABLE joints_play_action_client)
+install(TARGETS
+  action_client
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
+
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
