@@ -34,6 +34,9 @@ class JointsPlayActionClient : public rclcpp::Node {
                      std::bind(&JointsPlayActionClient::send_goal, this));
 
     this->declare_parameter<std::string>("file", getDefaultFullFilePath());
+
+    RCLCPP_INFO(this->get_logger(), "JointsPlayActionClient initialized");
+
   }
 
   void send_goal()  {
@@ -53,22 +56,27 @@ class JointsPlayActionClient : public rclcpp::Node {
 
     goal_msg.path = filePath;
 
-    RCLCPP_INFO(this->get_logger(), ("Sending goal: " + filePath).c_str() );
+   auto send_goal_options = rclcpp_action::Client<JointsPlay>::SendGoalOptions();
 
-    auto send_goal_options = rclcpp_action::Client<JointsPlay>::SendGoalOptions();
     send_goal_options.goal_response_callback =
       std::bind(&JointsPlayActionClient::goal_response_callback, this, _1);
+    
     send_goal_options.feedback_callback =
       std::bind(&JointsPlayActionClient::feedback_callback, this, _1, _2);
+    
     send_goal_options.result_callback =
       std::bind(&JointsPlayActionClient::result_callback, this, _1);
+
+    RCLCPP_INFO(this->get_logger(), ("Sending goal: " + filePath).c_str() );
 
     this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
   }
 
 
  private:
+
   rclcpp_action::Client<JointsPlay>::SharedPtr client_ptr_;
+
   rclcpp::TimerBase::SharedPtr timer_;
 
   std::string getDefaultFullFilePath() {
@@ -90,8 +98,8 @@ class JointsPlayActionClient : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), ("File path " + full_path.string()).c_str());
     return full_path.string();
     */
-
-    return "/home/nao/rolling_ws/src/hri/hri_moves/hello.txt";
+    
+    return "/home/toto/Gdrive/uni/robocup/robocup_ws/src/hri/hri_moves/moves/hello.txt";
     //return "hello.txt";  //WORKING
   }
 

@@ -3,6 +3,7 @@ from google.cloud import texttospeech
 import time
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
 
 from hri_interfaces.srv import TextToSpeech
 
@@ -41,7 +42,9 @@ class GTTSService(Node):
 
     def gtts_callback(self, sRequest, sResponse):
         # response.sum = request.a + request.b
-        self.get_logger().info("GTTSService Incoming request")
+        self.get_logger().info("GTTSService Incoming request waiting")
+
+        #self.get_clock().sleep_for(Duration(seconds=30))
 
         reqText = sRequest.text.strip()
         if reqText:  # not empty string
