@@ -104,14 +104,28 @@ def main(args=None):
     chat = ChatMoveNode2()
     start = True;
     messages = [
-        {"role": "system", "content": "Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria."}
+        #{"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. 
+        #                                La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria.
+        #                                Oggi ti trovi in un reparto di pediatria insieme a diversi bambini.
+        #                                Per motivi di sicurezza oggi non ti muovi nell'ambiente."""}
+        {"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Sei un membro della famiglia Bono.
+                                         Papà Franco è un grande medico ed è il migliore superato solo da mamma Concetta. Chiara è una sorella troppo bella anche se tremenda.
+                                         Antonio no comment... Speriamo in Caterina  """}
     ]
-    key_words = {"come"}
-    key_words_actions = {"oggi": "/home/toto/Gdrive/uni/robocup/robocup_ws/src/hri/hri_moves/moves/hello.txt",
-                         "come": "/home/toto/Gdrive/uni/robocup/robocup_ws/src/hri/hri_moves/moves/hello.txt",
-                         "robot": "hello.txt"}
-    sec_per_word=0.6;
-
+    key_words = {"ciao","tu","te","grande","piccolo","sotto","sopra","destra","sinistra","paura"}
+    key_words_actions = {"ciao": "/home/nao/rolling_ws/src/hri/hri_moves/moves/hello.txt",
+                         "tu": "/home/nao/rolling_ws/src/hri/hri_moves/moves/you.txt",
+                         "te": "/home/nao/rolling_ws/src/hri/hri_moves/moves/you.txt",
+                         "grande": "/home/nao/rolling_ws/src/hri/hri_moves/moves/big.txt",
+                         "piccolo": "/home/nao/rolling_ws/src/hri/hri_moves/moves/little.txt",
+                         "sotto": "/home/nao/rolling_ws/src/hri/hri_moves/moves/down.txt",
+                         "sopra": "/home/nao/rolling_ws/src/hri/hri_moves/moves/up.txt",
+                         "destra": "/home/nao/rolling_ws/src/hri/hri_moves/moves/right.txt",
+                         "sinistra": "/home/nao/rolling_ws/src/hri/hri_moves/moves/left.txt",
+                         "paura": "/home/nao/rolling_ws/src/hri/hri_moves/moves/fear.txt",
+                         }
+    sec_per_word=0.5;
+    delta=5
     try:
         while True:
     
@@ -137,17 +151,26 @@ def main(args=None):
                 # to extract words from string
                 words = re.findall(r'\w+', reply_text)
                 
+
+                firstWord=True
                 for w in words:
                     num_words += 1
                     w = w.lower()
                     if w in key_words:
                         key_words_found.append(w)
-                        key_words_time.append(num_words*sec_per_word)
+                        if (num_words<=delta) and firstWord :
+                            #key_words_time.append(num_words*sec_per_word)
+                            key_words_time.append(0.1)
+                            firstWord = False
+                        elif (num_words<=delta) and not firstWord:
+                                key_words_time.append(num_words*sec_per_word)
+                        else:
+                            key_words_time.append((num_words-delta)*sec_per_word)  
 
                 #speaking
                 gtts_resp = chat.send_gtts_req(reply_text)
                 #print(gtts_resp.debug)
-                chat.get_logger().info(' tts Request complete')
+                chat.get_logger().info('tts Request complete')
 
                 clock = chat.get_clock()
                 t_start = clock.now().seconds_nanoseconds()[0] #seconds
@@ -161,8 +184,10 @@ def main(args=None):
                         # wait
                         sleep_for = t_word - t_cur
                         chat.get_logger().info(f"waiting next action for: {sleep_for}")
+                        ta = clock.now().seconds_nanoseconds()[0]
                         chat.get_clock().sleep_for(Duration(seconds=sleep_for))
-
+                        tb = clock.now().seconds_nanoseconds()[0]
+                        chat.get_logger().info(f"slept for: {tb-ta}")
                         # execute
                         action_path = key_words_actions[key_words_found[i]]
                         t1 = clock.now().seconds_nanoseconds()[0]
