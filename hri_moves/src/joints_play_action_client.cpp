@@ -99,7 +99,7 @@ class JointsPlayActionClient : public rclcpp::Node {
     return full_path.string();
     */
     
-    return "/home/toto/Gdrive/uni/robocup/robocup_ws/src/hri/hri_moves/moves/hello.txt";
+    return "/home/nao/rolling_ws/src/hri/hri_moves/moves/fear.txt";
     //return "hello.txt";  //WORKING
   }
 

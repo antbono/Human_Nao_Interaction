@@ -51,6 +51,7 @@ class JointsPlayActionServer : public rclcpp::Node {
   rclcpp::Publisher<nao_lola_command_msgs::msg::JointPositions>::SharedPtr jpos_pub_;
   rclcpp::Publisher<nao_lola_command_msgs::msg::JointStiffnesses>::SharedPtr jstiff_pub_;
 
+  std::ifstream ifs_;
   std::vector<float> recorded_joints_;
   nao_lola_command_msgs::msg::JointIndexes joint_indexes_msg_;
   uint8_t rec_joint_indexes_ [10] =  {  joint_indexes_msg_.LSHOULDERPITCH,
@@ -70,7 +71,6 @@ class JointsPlayActionServer : public rclcpp::Node {
   nao_lola_command_msgs::msg::JointStiffnesses jstiff_cmd_;
 
   bool fileSuccessfullyRead_ = false;
-  bool executing_ = false;
 
 
   rclcpp_action::GoalResponse handle_goal(
@@ -79,34 +79,27 @@ class JointsPlayActionServer : public rclcpp::Node {
 
     RCLCPP_INFO( this->get_logger(), ("Received goal request with file path: " + goal->path).c_str() );
     (void)uuid;
+
     
-    if (!executing_){ 
+    ifs_.open( goal->path, std::ifstream::in);
+    if (ifs_.is_open()) {
+      //RCLCPP_WARN( this->get_logger(), ("File succesfully loaded from " + goal->path).c_str() );
+      fileSuccessfullyRead_ = true;
 
-      std::ifstream ifs;
-      ifs.open( goal->path, std::ifstream::in);
-      if (ifs.is_open()) {
-        RCLCPP_INFO( this->get_logger(), ("File succesfully loaded from " + goal->path).c_str() );
-        fileSuccessfullyRead_ = true;
-        recorded_joints_.clear();
-        float joint_value;
-        std::string line;
-        while (!ifs.eof()) {
-          std::getline(ifs, line,'\n');
-          joint_value = std::stof(line);
-          recorded_joints_.emplace_back( joint_value );
-        }
-        ifs.close();
-        RCLCPP_INFO( this->get_logger(), "Returning accept and execute");
-        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-
-      } else {
-        RCLCPP_ERROR(this->get_logger(), ("Couldn't open file " + goal->path).c_str() );
-        fileSuccessfullyRead_ = false;
-        return rclcpp_action::GoalResponse::REJECT;
+      recorded_joints_.clear();
+      float joint_value;
+      std::string line;
+      while (!ifs_.eof()) {
+        std::getline(ifs_, line,'\n');
+        joint_value = std::stof(line);
+        recorded_joints_.emplace_back( joint_value );
       }
-    }else{
-      RCLCPP_ERROR(this->get_logger(), "Server already executing " );
-        return rclcpp_action::GoalResponse::REJECT;
+      ifs_.close();
+      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    } else {
+      RCLCPP_ERROR(this->get_logger(), ("Couldn't open file " + goal->path).c_str() );
+      fileSuccessfullyRead_ = false;
+      return rclcpp_action::GoalResponse::REJECT;
     }
   }
 
@@ -124,8 +117,6 @@ class JointsPlayActionServer : public rclcpp::Node {
   }
 
   void execute(const std::shared_ptr<GoalHandleJointsPlay> goal_handle) {
-
-    executing_=true;
 
     RCLCPP_INFO(this->get_logger(), "Executing goal");
 
@@ -167,8 +158,6 @@ class JointsPlayActionServer : public rclcpp::Node {
       loop_rate.sleep();
       //rclcpp::sleep_for(12ms); // 80hz nao_lola update rate
     }
-
-    executing_=false;
 
     // Check if goal is done
     if (rclcpp::ok()) {

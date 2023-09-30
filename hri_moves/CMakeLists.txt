@@ -15,12 +15,20 @@ find_package(nao_lola_sensor_msgs REQUIRED)
 find_package(nao_lola_command_msgs REQUIRED)
 find_package(hri_interfaces REQUIRED)
 
+
+# Include Cpp "include" directory
+include_directories(include)
+
+# Create Cpp executable
 add_executable(record src/record.cpp)
-ament_target_dependencies(record 
-  rclcpp
-  std_msgs
-  nao_lola_sensor_msgs
-  nao_lola_command_msgs)    
+ament_target_dependencies(record rclcpp std_msgs nao_lola_sensor_msgs nao_lola_command_msgs)    
+
+# Install Cpp executables
+install(TARGETS
+  record
+  DESTINATION lib/${PROJECT_NAME})
+
+# Composition nodes
 
 add_library(action_server SHARED
   src/joints_play_action_server.cpp)
