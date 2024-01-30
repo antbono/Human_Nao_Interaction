@@ -60,31 +60,79 @@ class ChatNode(Node):
         )
         return response.choices[0].message
 
+    def get_response4(self, messages:list):
+        response = openai.ChatCompletion.create(
+            #model = "gpt-3.5-turbo",
+            model = "gpt-4",
+            messages=messages,
+            temperature = 1.0 # 0.0 - 2.0
+        )
+        return response.choices[0].message
 
 
 def main(args=None):
     rclpy.init(args=args)
 
+    print("main")
+
     chat = ChatNode()
     start = True;
-    messages = [
-        {"role": "system", "content": "Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria."}
+    messages_nao = [
+        {"role": "system", "content": "Sei un robot umanoide chiamato NAO. e parli preferibilmente\
+         italiano ma conosci e parli inglese anche. Alcune tue caratteristiche: \
+         - Parli preferibilmente italiano ma conosci anche altre lingue. \
+         - La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria. Il tuo sviluppatore principale è Antonio Bono. \
+         - Puoi riprodurre solo alcune canzoni che hai salvato nella tua memoria ma non canzoni qualsiasi.\
+         - Puoi vedere gli oggetti che ti circondano e indicare approssimativamente dove sono sono."}
+    ]
+
+    messages_test = [
+        {"role": "system", "content": "Sei un assistente virtuale collaborativo e parli italiano e inglese."}
     ]
 
     try:
         while True:
+
             gstt_resp = chat.send_gstt_req(start)
             print(gstt_resp.message)
             chat.get_logger().info('stt request complete')
 
-            messages.append({"role": "user", "content": gstt_resp.message})
-            new_message = chat.get_response(messages=messages)
+            print(gstt_resp.message)
 
-            gtts_resp = chat.send_gtts_req(new_message['content'])
-            print(gtts_resp.debug)
-            chat.get_logger().info(' tts Request complete')
+            #test_sing = "La frase \"Sai cantare una canzone?\" è simile alla frase \"" + gstt_resp.message + "\" ?. Rispondi solo con si o no."
 
-            messages.append(new_message)
+            #test_sing = "Dimmi se la frase \"" + gstt_resp.message + "\" riguarda: \
+             #   - una canzone\
+              #  - l'abilità di saper cantare\
+               # - la richiesta di cantare.\
+                #Se una di queste condizioni è vera rispondi dicendo soltanto \"si\" altrimenti soltanto \"no\". "
+
+
+            test_sing = "Dimmi se la frase \"" + gstt_resp.message + "\" riguarda la richiesta specifica di cantare\
+                qualcosa ma non un'informazione sull'abilità generica di saper cantare.\
+                Se è vero rispondi dicendo soltanto \"si\" altrimenti soltanto \"no\". "
+            
+            print(test_sing)
+
+            messages_test.append({"role": "user", "content": test_sing})
+
+            test_sing_reply = chat.get_response4(messages=messages_test)
+
+            test_message = test_sing_reply['content']
+
+            print (test_message.lower())
+
+            if test_message.lower() == "sì." or test_message.lower() == "sì" or test_message.lower() == "si" or test_message.lower() == "si.":
+                print("ok test riuscito")
+            else:
+                messages_nao.append({"role": "user", "content": gstt_resp.message})
+                nao_reply = chat.get_response4(messages=messages_nao)
+
+                gtts_resp = chat.send_gtts_req(nao_reply['content'])
+                print(gtts_resp.debug)
+                chat.get_logger().info(' tts Request complete')
+
+                messages_nao.append(nao_reply)
 
             user_input = input("Premi dopo aver sentito la risposta")
 

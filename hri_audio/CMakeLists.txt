@@ -43,7 +43,7 @@ install(PROGRAMS
   scripts/gstt_client.py
   scripts/gtts_service.py
   scripts/gtts_client.py
-  scripts/chat_node.py
+  #scripts/chat_node.py
   scripts/chat_move_node.py
   scripts/test_action.py
   DESTINATION lib/${PROJECT_NAME}

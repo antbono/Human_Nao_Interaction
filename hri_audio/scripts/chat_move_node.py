@@ -104,13 +104,9 @@ def main(args=None):
     chat = ChatMoveNode2()
     start = True;
     messages = [
-        #{"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. 
-        #                                La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria.
-        #                                Oggi ti trovi in un reparto di pediatria insieme a diversi bambini.
-        #                                Per motivi di sicurezza oggi non ti muovi nell'ambiente."""}
-        {"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Sei un membro della famiglia Bono.
-                                         Papà Franco è un grande medico ed è il migliore superato solo da mamma Concetta. Chiara è una sorella troppo bella anche se tremenda.
-                                         Antonio no comment... Speriamo in Caterina  """}
+        {"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. 
+                                        La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria.
+                                        Per motivi di sicurezza oggi non ti muovi nell'ambiente."""}
     ]
     key_words = {"ciao","tu","te","grande","piccolo","sotto","sopra","destra","sinistra","paura"}
     key_words_actions = {"ciao": "/home/nao/rolling_ws/src/hri/hri_moves/moves/hello.txt",

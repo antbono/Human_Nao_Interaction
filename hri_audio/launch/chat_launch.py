@@ -4,10 +4,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package='hri_audio',
+            package='nao_lola_client',
             #namespace='turtlesim2',
-            executable='chat_node',
-            name='chat_node'
+            executable='nao_lola_client',
+            name='lola_node'
         ),
         Node(
             package='sound_play',
@@ -26,5 +26,16 @@ def generate_launch_description():
             #namespace='turtlesim2',
             executable='gtts_service',
             name='gtts_service_node'
-        )
+        ),
+        Node(
+            package='hri_moves',
+            #namespace='turtlesim1',
+            executable='joints_play_action_server',
+            name='joints_play_action_server'
+        ),
+        Node(
+            package='hri_audio',
+            executable='chat_move_node',
+            name='chat_move_node'
+        ),
     ])
