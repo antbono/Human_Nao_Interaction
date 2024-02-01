@@ -9,7 +9,6 @@
 #include <iostream>   // std::cout
 #include <queue>      // std::queue
 
-
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "hri_interfaces/action/video_tracker.hpp"
@@ -26,8 +25,8 @@ namespace hri_head_track_cpp {
 
 const float width_step_ = 0.36;
 const float height_step_ = 0.25;
-const float height_ = 480;
-const float width_ = 640;
+const float height_ = 480; // y 
+const float width_ = 640;  // x
 
 class HeadTrackActionServer : public rclcpp::Node {
  public:
@@ -108,6 +107,7 @@ class HeadTrackActionServer : public rclcpp::Node {
   std::queue<float> y_track_;
   float last_yaw_;
   float last_pitch_;
+  const double seconds_to_head_reset=6.0; //seconds
 
   nao_lola_command_msgs::msg::JointPositions jpos_cmd_;
   nao_lola_command_msgs::msg::JointStiffnesses jstiff_cmd_;
@@ -137,9 +137,8 @@ class HeadTrackActionServer : public rclcpp::Node {
     last_pitch_ = joints.positions[joint_indexes_msg_.HEADPITCH];
 
     RCLCPP_DEBUG_STREAM(this->get_logger(), "New joint positions saved");
-
-
   }
+
 
 // ###################################### client ################################
 
@@ -186,9 +185,9 @@ class HeadTrackActionServer : public rclcpp::Node {
     GoalHandleObjTrack::SharedPtr,
     const std::shared_ptr<const ObjTrack::Feedback> feedback) {
 
-    x_track_.push(feedback->center.x);
+    x_track_.push(feedback->center.x); //from 0 to width_
 
-    y_track_.push(feedback->center.y);
+    y_track_.push(feedback->center.y); //from 0 to height_
 
     if (x_track_.size() > track_max_size_) {
       x_track_.pop();
@@ -281,8 +280,12 @@ class HeadTrackActionServer : public rclcpp::Node {
     bool tracking = false;
     bool right_available, left_available;
     bool up_available, down_available;
+    bool first_miss_face = true, reset_head=false;
+    rclcpp::Time noFaceTime;
 
-    rclcpp::Rate loop_rate(0.5);
+
+    rclcpp::Rate loop_rate(0.5); //Hz
+
 
     while (rclcpp::ok()) {
       RCLCPP_INFO(this->get_logger(), "inside while");
@@ -427,10 +430,26 @@ class HeadTrackActionServer : public rclcpp::Node {
           RCLCPP_INFO(this->get_logger(), "Publishing on effectors/joint_positions");
           jpos_cmd_.indexes.clear();
           jpos_cmd_.positions.clear();
+          first_miss_face = true;
+          reset_head=false;
         }
         // object position available
       } else {
         RCLCPP_INFO(this->get_logger(), "No face detected");
+        if (first_miss_face) {
+          first_miss_face = false;
+
+          noFaceTime = rclcpp::Clock{RCL_ROS_TIME}.now();
+          RCLCPP_INFO_STREAM(this->get_logger(), "first no face time: "<< noFaceTime.seconds());
+        } else if (rclcpp::Clock{RCL_ROS_TIME}.now().seconds() - noFaceTime.seconds() > seconds_to_head_reset 
+                      && !reset_head) {
+          jpos_cmd_.indexes.push_back(joint_indexes_msg_.HEADPITCH);
+          jpos_cmd_.positions.push_back(0.0);
+          jpos_cmd_.indexes.push_back(joint_indexes_msg_.HEADYAW);
+          jpos_cmd_.positions.push_back(0.0);
+          jpos_pub_->publish(jpos_cmd_);
+          reset_head=true;
+        }
       }
 
       loop_rate.sleep();

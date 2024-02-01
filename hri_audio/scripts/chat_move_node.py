@@ -46,6 +46,7 @@ class ChatMoveNode2(Node):
         self.get_logger().info('chat_move_node initialized')
 
 
+
     def send_gstt_req(self, cmd):
         self.gstt_req.data = cmd
         self.future = self.gstt_client.call_async(self.gstt_req)

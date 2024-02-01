@@ -1,4 +1,5 @@
 import time
+import threading
 
 from hri_interfaces.action import VideoTracker
 from geometry_msgs.msg import Point
@@ -9,6 +10,7 @@ from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
+from rclpy.timer import Rate,Timer
 
 from collections import defaultdict
 
@@ -28,19 +30,19 @@ class VideoTrackerOb(Node):
             self,
             VideoTracker,
             'face_tracker',
-            execute_callback=self.execute_callback,
-            callback_group=ReentrantCallbackGroup(),
-            goal_callback=self.goal_callback,
-            cancel_callback=self.cancel_callback)
+            execute_callback = self.execute_callback,
+            callback_group = ReentrantCallbackGroup(),
+            goal_callback = self.goal_callback,
+            cancel_callback = self.cancel_callback)
 
         # Create the subscriber. This subscriber will receive an Image
-        # from the video_frames topic. The queue size is 10 messages.
+        # from the video_frames topic. The queue size is 1 messages.
         self.img_sub = self.create_subscription(
             Image, 
             #'video_frames', 
             '/image_raw',
             self.image_listener_callback, 
-            10)
+            1)
         self.img_sub # prevent unused variable warning
       
         # Used to convert between ROS and OpenCV images
@@ -52,9 +54,15 @@ class VideoTrackerOb(Node):
         # Store the track history
         self.track_history = defaultdict(lambda: [])
 
+        self.received_frame=np.zeros((480,640,3), np.uint8)
+
         self.frame = np.zeros((480,640,3), np.uint8)
 
+        self._loop_rate = self.create_rate( 1.0 , self.get_clock()) # Hz
+
         self.get_logger().info('node initialized')
+
+        self.newdata = False
 
     def image_listener_callback(self, data):
         """
@@ -62,17 +70,8 @@ class VideoTrackerOb(Node):
         """
         # Display the message on the console
         self.get_logger().debug('Receiving video frame')
-     
-        # Convert ROS Image message to OpenCV image
-        current_frame = self.br.imgmsg_to_cv2(data)
-        #print('output dtype      : {}'.format(current_frame.dtype))
-        #print('output shape      : {}'.format(current_frame.shape))
-        #print('output encoding      : {}'.format(current_frame.tostring()))
-
-        img = current_frame.reshape(480, 640, 2)
-        rgb = cv2.cvtColor(img, cv2.COLOR_YUV2BGR_YUYV)
-        rgb = cv2.rotate(rgb, cv2.ROTATE_180)
-        self.frame = rgb
+        #self.newdata = True
+        self.received_frame=data
 
 
     def destroy(self):
@@ -98,56 +97,72 @@ class VideoTrackerOb(Node):
 
         center = Point()
 
+
         # Loop through the video frames
         while rclpy.ok():
             
-            # Run YOLOv8 tracking on the frame, persisting tracks between frames
-            results = self.model.track(self.frame, persist=True, tracker="bytetrack.yaml")
+            #if self.newdata:
+                #self.newdata=False;
+                # Convert ROS Image message to OpenCV image
+                current_frame = self.br.imgmsg_to_cv2(self.received_frame)
+                #print('output dtype      : {}'.format(current_frame.dtype))
+                #print('output shape      : {}'.format(current_frame.shape))
+                #print('output encoding      : {}'.format(current_frame.tostring()))
 
-            # Get the boxes and track IDs
-            boxes = results[0].boxes.xywh.cuda()
-            
-            #boxes = results[0].boxes.xywh.cuda()
-            #track_ids = results[0].boxes.id.int().cuda().tolist()
-
-
-            try:
-                track_ids = results[0].boxes.id.int().cuda().tolist()
-
-                # Plot the tracks
-                for box, track_id in zip(boxes, track_ids):
-                    x, y, w, h = box
-                    track = self.track_history[track_id]
-                    track.append((float(x), float(y)))  # x, y center point
-                    if len(track) > 30:  # retain 90 tracks for 90 frames
-                        track.pop(0)
-
-                    # Draw the tracking lines
-                    #points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                    #cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=10)
-
-                    center.x = float(x)
-                    center.y = float(y)
-
-                    feedback_msg.center = center
-
-                    # Publish the feedback
-                    goal_handle.publish_feedback(feedback_msg)
-
-                    #annotated_frame = results[0].plot()
-                    #cv2.imshow("YOLOv8 Tracking", annotated_frame)
-
-            except AttributeError:
-                self.get_logger().warning('no face detected')
-                center.x = -1.0
-                center.y = -1.0
-                feedback_msg.center = center
-                goal_handle.publish_feedback(feedback_msg)
+                img = current_frame.reshape(480, 640, 2)
+                rgb = cv2.cvtColor(img, cv2.COLOR_YUV2BGR_YUYV)
+                rgb = cv2.rotate(rgb, cv2.ROTATE_180)
+                self.frame = rgb
                 
-            except:
-                self.get_logger().error('something else get wrong')
+                # Run YOLOv8 tracking on the frame, persisting tracks between frames
+                results = self.model.track(self.frame, persist=True, tracker="bytetrack.yaml")
 
-            # Visualize the results on the frame
+                # Get the boxes and track IDs
+                boxes = results[0].boxes.xywh.cuda()
+                
+                #boxes = results[0].boxes.xywh.cuda()
+                #track_ids = results[0].boxes.id.int().cuda().tolist()
+
+
+                try:
+                    track_ids = results[0].boxes.id.int().cuda().tolist()
+
+                    # Plot the tracks
+                    for box, track_id in zip(boxes, track_ids):
+                        x, y, w, h = box
+                        #track = self.track_history[track_id]
+                        #track.append((float(x), float(y)))  # x, y center point
+                        #if len(track) > 30:  # retain 90 tracks for 90 frames
+                            #track.pop(0)
+
+                        # Draw the tracking lines
+                        #points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                        #cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=10)
+
+                        center.x = float(x)
+                        center.y = float(y)
+
+                        feedback_msg.center = center
+
+                        # Publish the feedback
+                        goal_handle.publish_feedback(feedback_msg)
+
+                        #annotated_frame = results[0].plot()
+                        #cv2.imshow("YOLOv8 Tracking", annotated_frameed_frame)
+                            
+
+                except AttributeError:
+                    self.get_logger().warning('no face detected')
+                    center.x = -1.0
+                    center.y = -1.0
+                    feedback_msg.center = center
+                    goal_handle.publish_feedback(feedback_msg)
+                    
+                except:
+                    self.get_logger().error('something else get wrong')
+
+                self._loop_rate.sleep()    
+                # Visualize the results on the frame
                        
 
         goal_handle.succeed()    
