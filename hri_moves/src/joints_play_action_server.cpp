@@ -5,7 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
-#include <string>     // std::string, std::stof
+#include <string>     // std::string, std::stof std::c_str
+
 #include <iostream>   // std::cout
 
 #include "hri_interfaces/action/joints_play.hpp"

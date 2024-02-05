@@ -15,6 +15,8 @@ find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sound_play REQUIRED)
 find_package(hri_interfaces REQUIRED)
+find_package(nao_lola_sensor_msgs REQUIRED)
+find_package(nao_lola_command_msgs REQUIRED)
 
 
 # Include Cpp "include" directory

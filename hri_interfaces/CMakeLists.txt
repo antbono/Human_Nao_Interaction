@@ -10,12 +10,13 @@ find_package(ament_cmake REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-
-
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/LedIndexes.msg"
+  "msg/LedModes.msg"
   "srv/TextToSpeech.srv"
   "action/JointsPlay.action"
   "action/VideoTracker.action"
+  "action/LedsPlay.action"
   DEPENDENCIES geometry_msgs
  )
 

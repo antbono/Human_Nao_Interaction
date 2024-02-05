@@ -170,6 +170,65 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
+add_library(led_server SHARED
+  src/led_action_server.cpp
+)
+target_include_directories(led_server PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_definitions(led_server
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
+)
+ament_target_dependencies(led_server
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components"
+  "nao_lola_command_msgs"
+  "nao_lola_sensor_msgs"
+  "hri_interfaces"
+  "std_msgs"
+)
+rclcpp_components_register_node(led_server
+  PLUGIN "hri_led_action_server::LedsPlayActionServer" 
+  EXECUTABLE led_action_server
+)
+install(TARGETS
+  led_server
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+add_library(led_client SHARED
+  src/led_action_client.cpp
+)
+target_include_directories(led_client PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_definitions(led_client
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
+)
+ament_target_dependencies(led_client
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components"
+  "nao_lola_command_msgs"
+  "nao_lola_sensor_msgs"
+  "hri_interfaces"
+  "std_msgs"
+)
+rclcpp_components_register_node(led_client
+  PLUGIN "hri_led_action_client::LedsPlayActionClient" 
+  EXECUTABLE led_action_client
+)
+install(TARGETS
+  led_client
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 if(BUILD_TESTING)
 find_package(ament_lint_auto REQUIRED)

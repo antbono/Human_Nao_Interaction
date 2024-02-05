@@ -21,11 +21,19 @@ from hri_interfaces.srv import TextToSpeech
 # bool success
 # string debug
 
+from std_msgs.msg import *
+from nao_lola_command_msgs.msg import * 
+
 api_key = os.environ["OPENAI_API_KEY"]
 
 openai.api_key = api_key
 
 class ChatMoveNode2(Node):
+
+    white = ColorRGBA()
+    white.r = 1.0
+    white.g = 1.0
+    white.b = 1.0
 
     def __init__(self):
         super().__init__('chat_move_node')
@@ -43,8 +51,15 @@ class ChatMoveNode2(Node):
         self.gtts_req = TextToSpeech.Request()
 
         self._action_client = ActionClient(self, JointsPlay, 'joints_play')
-        self.get_logger().info('chat_move_node initialized')
 
+        self.chest_pub = self.create_publisher(ChestLed, 'effectors/chest_led', 10)
+        self.right_eye_pub = self.create_publisher(RightEyeLeds, 'effectors/right_eye_leds', 10)
+        self.left_eye_pub = self.create_publisher(LeftEyeLeds, 'effectors/left_eye_leds', 10)
+        self.right_ear_pub = self.create_publisher(RightEarLeds, 'effectors/right_ear_leds', 10)
+        self.left_ear_pub = self.create_publisher(LeftEarLeds, 'effectors/left_ear_leds', 10)
+        self.head_pub = self.create_publisher(HeadLeds, 'effectors/head_leds', 10)
+
+        self.get_logger().info('chat_move_node initialized')
 
 
     def send_gstt_req(self, cmd):
@@ -99,6 +114,58 @@ class ChatMoveNode2(Node):
         if(result.success):
             self.playing_move=False
 
+    def chest_on(self, color=white):
+        chest_msg = ChestLed()
+        chest_msg.color = color        
+        self.chest_pub.publish(chest_msg)
+
+    def right_eye_on(self, color=white):
+        right_eye_msg = RightEyeLeds()
+        for i in range(right_eye_msg.NUM_LEDS): #8 leds 
+            right_eye_msg.colors[i]=color
+        self.right_eye_pub.publish(right_eye_msg)
+
+    def left_eye_on(self, color=white):
+        left_eye_msg = LeftEyeLeds()
+        for i in range(left_eye_msg.NUM_LEDS):
+            left_eye_msg.colors[i]=color
+        self.left_eye_pub.publish(left_eye_msg)
+
+    def eyes_on(self, color=white):
+        self.right_eye_on(color)
+        self.left_eye_on(color)
+
+    def right_ear(self, intensity=1.0, loop=false):
+        right_ear_msg = RightEarLeds()
+
+        if loop and intensity>0.0:
+            
+
+        else:
+            for i in range(right_ear_msg.NUM_LEDS): #10 leds
+            right_ear_msg.intensities[i]=intensity
+            self.right_ear_pub.publish(right_ear_msg)
+
+
+        
+
+    def left_ear_on(self):
+        left_ear_msg = LeftEarLeds()
+        for i in range(left_ear_msg.NUM_LEDS):
+            left_ear_msg.intensities[i]=1.0
+        self.left_ear_pub.publish(left_ear_msg)
+
+    def ears_on(self):
+        self.right_ear_on()
+        self.left_ear_on()
+
+    def head_on(self):
+        head_msg = HeadLeds()
+        for i in range(head_msg.NUM_LEDS): # 12 leds
+            head_msg.intensities[i]=1.0
+        self.head_pub.publish(head_msg)
+
+
 def main(args=None):
     rclpy.init(args=args)
 
@@ -123,14 +190,22 @@ def main(args=None):
                          }
     sec_per_word=0.5;
     delta=5
+
+    chat.chest_on()
+    chat.eyes_on()
+    chat.ears_on()
+    chat.head_on()
+
+
+
     try:
         while True:
     
                 num_words = 0
                 key_words_found = []
                 key_words_time = []
-                playing=False
-                lastActionTime=0
+                playing = False
+                lastActionTime = 0
 
                 chat.get_logger().info('ready to listen')
                 gstt_resp = chat.send_gstt_req(start)
