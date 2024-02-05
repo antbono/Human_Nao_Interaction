@@ -67,14 +67,14 @@ class LedsPlayActionClient : public rclcpp::Node {
 
     auto goal_msg = LedsPlay::Goal();
 
-    goal_msg.leds = {LedIndexes::REYE, LedIndexes::LEYE};
-    goal_msg.mode = LedModes::BLINKING;
+    goal_msg.leds = {LedIndexes::HEAD};
+    goal_msg.mode = LedModes::LOOP;
     std_msgs::msg::ColorRGBA color;
-    color.r=0.0; color.g=1.0; color.b=0.0;
+    color.r=0.0; color.g=0.0; color.b=1.0;
     for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
                 goal_msg.colors[i] = color;
     }
-    goal_msg.frequency = 1.0;
+    goal_msg.frequency = 10.0;
    
    auto send_goal_options = rclcpp_action::Client<LedsPlay>::SendGoalOptions();
 
