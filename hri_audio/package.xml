@@ -17,6 +17,9 @@
   <depend>std_msgs</depend>
   <depend>sound_play</depend>
   <depend>hri_interfaces</depend>
+  <depend>hri_moves</depend>
+  <depend>nao_lola_sensor_msgs</depend>
+  <depend>nao_lola_command_msgs</depend>
 
   <exec_depend>ros2launch</exec_depend>
   

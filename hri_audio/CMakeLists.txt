@@ -15,6 +15,7 @@ find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sound_play REQUIRED)
 find_package(hri_interfaces REQUIRED)
+find_package(hri_moves REQUIRED)
 find_package(nao_lola_sensor_msgs REQUIRED)
 find_package(nao_lola_command_msgs REQUIRED)
 
@@ -48,6 +49,7 @@ install(PROGRAMS
   #scripts/chat_node.py
   scripts/chat_move_node.py
   scripts/test_action.py
+  scripts/led_action_client.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

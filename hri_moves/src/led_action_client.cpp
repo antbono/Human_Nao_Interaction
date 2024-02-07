@@ -45,9 +45,10 @@ class LedsPlayActionClient : public rclcpp::Node {
                           this,
                           "leds_play");
 
-    this->timer_ = this->create_wall_timer(
+    /*this->timer_ = this->create_wall_timer(
                      std::chrono::milliseconds(500),
                      std::bind(&LedsPlayActionClient::send_goal, this));
+    */
 
     //this->declare_parameter<std::string>("file", getDefaultFullFilePath());
 
@@ -90,6 +91,76 @@ class LedsPlayActionClient : public rclcpp::Node {
     RCLCPP_INFO(this->get_logger(), "Sending goal:" );
 
     this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
+  }
+
+
+  void eyes_on(){
+  using namespace std::placeholders;
+    if (!this->client_ptr_->wait_for_action_server()) {
+      RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+      rclcpp::shutdown();
+    }
+
+    auto goal_msg = LedsPlay::Goal();
+
+    goal_msg.leds = {LedIndexes::REYE, LedIndexes::LEYE};
+    goal_msg.mode = LedModes::STEADY;
+    std_msgs::msg::ColorRGBA color;
+    color.r=1.0; color.g=1.0; color.b=1.0;
+    for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+                goal_msg.colors[i] = color;
+    }
+   
+   auto send_goal_options = rclcpp_action::Client<LedsPlay>::SendGoalOptions();
+
+    send_goal_options.goal_response_callback =
+      std::bind(&LedsPlayActionClient::goal_response_callback, this, _1);
+    
+    send_goal_options.feedback_callback =
+      std::bind(&LedsPlayActionClient::feedback_callback, this, _1, _2);
+    
+    send_goal_options.result_callback =
+      std::bind(&LedsPlayActionClient::result_callback, this, _1);
+
+    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+
+    this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
+
+  }
+
+  void head_on(){
+    using namespace std::placeholders;
+
+    if (!this->client_ptr_->wait_for_action_server()) {
+      RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+      rclcpp::shutdown();
+    }
+
+    auto goal_msg = LedsPlay::Goal();
+
+    goal_msg.leds = {LedIndexes::HEAD};
+    goal_msg.mode = LedModes::STEADY;
+    std::array<float, 12> intensities;
+    for (unsigned i=0; i< intensities.size(); ++i)
+      intensities[i]=1.0;
+
+    goal_msg.intensities=intensities;
+
+   auto send_goal_options = rclcpp_action::Client<LedsPlay>::SendGoalOptions();
+
+    send_goal_options.goal_response_callback =
+      std::bind(&LedsPlayActionClient::goal_response_callback, this, _1);
+    
+    send_goal_options.feedback_callback =
+      std::bind(&LedsPlayActionClient::feedback_callback, this, _1, _2);
+    
+    send_goal_options.result_callback =
+      std::bind(&LedsPlayActionClient::result_callback, this, _1);
+
+    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+
+    this->client_ptr_->async_send_goal(goal_msg, send_goal_options);
+
   }
 
 

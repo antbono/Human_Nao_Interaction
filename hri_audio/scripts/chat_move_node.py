@@ -21,8 +21,11 @@ from hri_interfaces.srv import TextToSpeech
 # bool success
 # string debug
 
+
 from std_msgs.msg import *
 from nao_lola_command_msgs.msg import * 
+
+from led_action_client import LedsPlayActionClient
 
 api_key = os.environ["OPENAI_API_KEY"]
 
@@ -135,35 +138,34 @@ class ChatMoveNode2(Node):
         self.right_eye_on(color)
         self.left_eye_on(color)
 
-    def right_ear(self, intensity=1.0, loop=false):
-        right_ear_msg = RightEarLeds()
+    #def right_ear(self, intensity=1.0, loop=false):
+    #    right_ear_msg = RightEarLeds()
 
-        if loop and intensity>0.0:
-            
+    #    if loop and intensity>0.0:
 
-        else:
-            for i in range(right_ear_msg.NUM_LEDS): #10 leds
-            right_ear_msg.intensities[i]=intensity
-            self.right_ear_pub.publish(right_ear_msg)
+    #    else:
+    #        for i in range(right_ear_msg.NUM_LEDS): #10 leds
+    #            right_ear_msg.intensities[i]=intensity
+    #        self.right_ear_pub.publish(right_ear_msg)
 
 
         
 
-    def left_ear_on(self):
-        left_ear_msg = LeftEarLeds()
-        for i in range(left_ear_msg.NUM_LEDS):
-            left_ear_msg.intensities[i]=1.0
-        self.left_ear_pub.publish(left_ear_msg)
+    #def left_ear_on(self):
+        #left_ear_msg = LeftEarLeds()
+        #for i in range(left_ear_msg.NUM_LEDS):
+        #    left_ear_msg.intensities[i]=1.0
+        #self.left_ear_pub.publish(left_ear_msg)
 
-    def ears_on(self):
-        self.right_ear_on()
-        self.left_ear_on()
+    #def ears_on(self):
+    #    self.right_ear_on()
+    #    self.left_ear_on()
 
-    def head_on(self):
-        head_msg = HeadLeds()
-        for i in range(head_msg.NUM_LEDS): # 12 leds
-            head_msg.intensities[i]=1.0
-        self.head_pub.publish(head_msg)
+    #def head_on(self):
+    #    head_msg = HeadLeds()
+    #    for i in range(head_msg.NUM_LEDS): # 12 leds
+    #        head_msg.intensities[i]=1.0
+     #   self.head_pub.publish(head_msg)
 
 
 def main(args=None):
@@ -191,16 +193,32 @@ def main(args=None):
     sec_per_word=0.5;
     delta=5
 
-    chat.chest_on()
-    chat.eyes_on()
-    chat.ears_on()
-    chat.head_on()
+    #ledClient = LedsPlayActionClient()
 
+    w = ColorRGBA()
+    w.r = 1.0
+    w.g = 1.0
+    w.b = 1.0
+
+    chat.eyes_on(w)
+
+    #intensities_on = []
+    #for i in range(HeadLeds.NUM_LEDS):
+    #    intensities_on.append(1.0)
+
+    #intensities_off = []
+    #for i in range(HeadLeds.NUM_LEDS):
+    #    intensities_off.append(0.0)
+
+    #ledClient.eyes_steady(w)
+    #ledClient.chest_steady(w)
+    #ledClient.ears_steady(intensities_on)
 
 
     try:
         while True:
-    
+                
+                blinking_client = LedsPlayActionClient()
                 num_words = 0
                 key_words_found = []
                 key_words_time = []
@@ -211,19 +229,21 @@ def main(args=None):
                 gstt_resp = chat.send_gstt_req(start)
                 #print(f"risultato service: {gstt_resp.success}")
                 chat.get_logger().info('stt request complete')
-
+                blinking_client.head_blinking(1.0)
+               
                 messages.append({"role": "user", "content": gstt_resp.message})
                 new_message = chat.get_response(messages=messages)
+                
 
                 reply_text = new_message['content'];
                 print("nao reply: ")
                 print(reply_text)
-
+                blinking_client.cancel_action()
                 # using regex( findall() )
                 # to extract words from string
                 words = re.findall(r'\w+', reply_text)
                 
-
+                
                 firstWord=True
                 for w in words:
                     num_words += 1
@@ -239,6 +259,7 @@ def main(args=None):
                         else:
                             key_words_time.append((num_words-delta)*sec_per_word)  
 
+                
                 #speaking
                 gtts_resp = chat.send_gtts_req(reply_text)
                 #print(gtts_resp.debug)

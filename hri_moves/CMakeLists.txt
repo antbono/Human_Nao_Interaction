@@ -50,8 +50,6 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 
-
-
 add_library(action_client SHARED
   src/joints_play_action_client.cpp
 )
@@ -170,36 +168,47 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
+#################### LED SERVER ###########################
 add_library(led_server SHARED
-  src/led_action_server.cpp
-)
+  src/led_action_server.cpp)
+
 target_include_directories(led_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
+  $<INSTALL_INTERFACE:include>)
+
 target_compile_definitions(led_server
-  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+
+rclcpp_components_register_node(led_server
+  PLUGIN "hri_led_action_server::LedsPlayActionServer" 
+  EXECUTABLE led_action_server
 )
-ament_target_dependencies(led_server
+
+set(LED_SERVER_INCLUDE_DEPENDS
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components"
   "nao_lola_command_msgs"
   "nao_lola_sensor_msgs"
   "hri_interfaces"
-  "std_msgs"
-)
-rclcpp_components_register_node(led_server
-  PLUGIN "hri_led_action_server::LedsPlayActionServer" 
-  EXECUTABLE led_action_server
-)
-install(TARGETS
-  led_server
+  "std_msgs")
+
+ament_target_dependencies(led_server ${LED_SERVER_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${LED_SERVER_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS led_server
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-)
+  INCLUDES DESTINATION include)
 
+#################### LED CLIENT ###########################
 add_library(led_client SHARED
   src/led_action_client.cpp
 )
