@@ -41,13 +41,16 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/test_audio.py
+
   scripts/gstt_service.py
   scripts/gstt_client.py
   scripts/gtts_service.py
   scripts/gtts_client.py
+  scripts/chat_service.py
+  scripts/chat_client.py
   #scripts/chat_node.py
   scripts/chat_move_node.py
+  scripts/test_audio.py
   scripts/test_action.py
   scripts/led_action_client.py
   DESTINATION lib/${PROJECT_NAME}

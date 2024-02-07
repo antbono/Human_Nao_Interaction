@@ -53,7 +53,7 @@ LedsPlayActionServer::LedsPlayActionServer(const rclcpp::NodeOptions & options)
     : rclcpp::Node("leds_play_action_server_node", options) {
     using namespace std::placeholders;
 
-    action_server_ = rclcpp_action::create_server<hri_interfaces::action::LedsPlay>(
+    this->action_server_ = rclcpp_action::create_server<hri_interfaces::action::LedsPlay>(
                                this,
                                "leds_play",
                                std::bind(&LedsPlayActionServer::handleGoal, this, _1, _2),
