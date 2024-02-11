@@ -14,9 +14,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LedIndexes.msg"
   "msg/LedModes.msg"
   "srv/TextToSpeech.srv"
+  "srv/Chat.srv"
   "action/JointsPlay.action"
   "action/VideoTracker.action"
   "action/LedsPlay.action"
+  "action/ChatPlay.action"
   DEPENDENCIES geometry_msgs
  )
 

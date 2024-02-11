@@ -18,7 +18,7 @@
 import rclpy
 from rclpy.node import Node
 
-from hri_interfaces.srv import TextToSpeech
+from hri_interfaces.srv import Chat
 
 import openai
 import os
@@ -31,8 +31,8 @@ openai.api_key = api_key
 class ChatService(Node):
 
     def __init__(self):
-        super().__init__('chat_service')
-        self.srv = self.create_service(TextToSpeech, 'chatGPT_service', self.chat_callback)
+        super().__init__('chat_service_server')
+        self.srv = self.create_service(Chat, 'chatGPT_service', self.chat_callback)
         self.chat_messages = [
         {"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. 
                                         La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria.

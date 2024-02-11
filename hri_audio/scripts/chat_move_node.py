@@ -233,7 +233,7 @@ def main(args=None):
     try:
         while True:
                 
-                blinking_client = LedsPlayActionClient()
+                #blinking_client = LedsPlayActionClient()
                 num_words = 0
                 key_words_found = []
                 key_words_time = []
@@ -244,7 +244,7 @@ def main(args=None):
                 gstt_resp = chat.send_gstt_req(start)
                 #print(f"risultato service: {gstt_resp.success}")
                 chat.get_logger().info('stt request complete')
-                blinking_client.head_blinking(1.0)
+                #blinking_client.head_blinking(1.0)
                
                 messages.append({"role": "user", "content": gstt_resp.message})
                 new_message = chat.get_response(messages=messages)
@@ -253,7 +253,8 @@ def main(args=None):
                 reply_text = new_message['content'];
                 print("nao reply: ")
                 print(reply_text)
-                blinking_client.cancel_action()
+                #blinking_client.cancel_action()
+                
                 # using regex( findall() )
                 # to extract words from string
                 words = re.findall(r'\w+', reply_text)

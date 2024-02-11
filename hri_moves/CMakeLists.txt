@@ -7,23 +7,22 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(hri_interfaces REQUIRED)
+find_package(nao_lola_sensor_msgs REQUIRED)
+find_package(nao_lola_command_msgs REQUIRED)
+find_package(nao_pos_interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(nao_lola_sensor_msgs REQUIRED)
-find_package(nao_lola_command_msgs REQUIRED)
-find_package(hri_interfaces REQUIRED)
 find_package(rcutils REQUIRED)
-find_package(naosoccer_pos_action_interfaces REQUIRED)
-
 
 
 # Include Cpp "include" directory
 include_directories(include)
 
-
-# Composition nodes
+#################### JOINTS_PLAY_ACTION_SERVER ###################
 add_library(action_server SHARED
   src/joints_play_action_server.cpp
 )
@@ -50,6 +49,7 @@ install(TARGETS
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
 
+#################### JOINTS_PLAY_ACTION_CLIENT #####################
 add_library(action_client SHARED
   src/joints_play_action_client.cpp
 )
@@ -76,6 +76,7 @@ install(TARGETS
   RUNTIME DESTINATION bin)
 
 
+#################### HEAD_TRACK_SERVER ###########################
 add_library(head_track_server SHARED
   src/head_track_action_server.cpp
 )
@@ -106,7 +107,7 @@ install(TARGETS
 )
 
 
-
+#################### HEAD_TRACK_CLIENT ###########################
 add_library(head_track_client SHARED
   src/head_track_action_client.cpp
 )
@@ -136,37 +137,6 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
-
-
-add_library(naosoccer_action_client SHARED
-  src/naosoccer_client.cpp
-)
-target_include_directories(naosoccer_action_client PRIVATE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_definitions(naosoccer_action_client
-  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
-)
-ament_target_dependencies(naosoccer_action_client
-  "rclcpp"
-  "rclcpp_action"
-  "rclcpp_components"
-  "nao_lola_command_msgs"
-  "nao_lola_sensor_msgs"
-  "hri_interfaces"
-  "naosoccer_pos_action_interfaces"
-)
-rclcpp_components_register_node(naosoccer_action_client 
-  PLUGIN "hri_naosoccer_action_client::NaosoccerActionClient" 
-  EXECUTABLE naosoccer_client
-)
-install(TARGETS
-  naosoccer_action_client
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
 
 #################### LED SERVER ###########################
 add_library(led_server SHARED
@@ -239,6 +209,47 @@ install(TARGETS
   RUNTIME DESTINATION bin
 )
 
+#################### CHAT ACTION SERVER ###########################
+add_library(chat_server SHARED
+  src/chat_action_server.cpp)
+
+target_include_directories(chat_server PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+target_compile_definitions(chat_server
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+
+rclcpp_components_register_node(chat_server
+  PLUGIN "hri_chat_action_server::ChatActionServer" 
+  EXECUTABLE chat_action_server
+)
+set(CHAT_SERVER_INCLUDE_DEPENDS
+  "hri_interfaces"
+  "nao_lola_command_msgs"
+  "nao_lola_sensor_msgs"  
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components"
+  "std_msgs"
+  "std_srvs")
+
+ament_target_dependencies(chat_server ${CHAT_SERVER_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${CHAT_SERVER_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS chat_server
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
+#################### TEST ###############################
 if(BUILD_TESTING)
 find_package(ament_lint_auto REQUIRED)
 # the following line skips the linter which checks for copyrights

@@ -17,17 +17,17 @@
 import sys
 import rclpy
 from rclpy.node import Node
-from hri_interfaces.srv import TextToSpeech
+from hri_interfaces.srv import Chat
 
 
 class ChatClientAsync(Node):
 
     def __init__(self):
         super().__init__('chat_srv_client_node')
-        self.cli = self.create_client(TextToSpeech, 'chatGPT_service')
+        self.cli = self.create_client(Chat, 'chatGPT_service')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
-        self.req = TextToSpeech.Request()
+        self.req = Chat.Request()
 
     def send_request(self, phrase):
         self.req.text = phrase
@@ -39,7 +39,7 @@ class ChatClientAsync(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    msg = input("Messaggio: ")
+    msg = input("Message: ")
 
     gstt_client = ChatClientAsync()
     response = gstt_client.send_request(msg)
