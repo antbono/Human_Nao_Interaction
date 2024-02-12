@@ -238,17 +238,20 @@ install(TARGETS
 add_library(chat_server SHARED
   src/chat_action_server.cpp)
 
-target_include_directories(chat_server PRIVATE
+target_include_directories(chat_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-
-target_compile_definitions(chat_server
-  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
 
 rclcpp_components_register_node(chat_server
   PLUGIN "hri_chat_action_server::ChatActionServer" 
   EXECUTABLE chat_action_server
 )
+
+#target_compile_definitions(chat_server
+#  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+target_compile_definitions(led_server
+  PUBLIC "CUSTOM_ACTION_CPP_BUILDING_DLL")
+
 set(CHAT_SERVER_INCLUDE_DEPENDS
   "hri_interfaces"
   "nao_lola_command_msgs"
@@ -256,7 +259,6 @@ set(CHAT_SERVER_INCLUDE_DEPENDS
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components"
-  "std_msgs"
   "std_srvs")
 
 ament_target_dependencies(chat_server ${CHAT_SERVER_INCLUDE_DEPENDS})

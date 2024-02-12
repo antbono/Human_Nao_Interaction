@@ -73,6 +73,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
                                std::bind(&ChatActionServer::handleCancel, this, _1),
                                std::bind(&ChatActionServer::handleAccepted, this, _1));
 
+
     moves_map_["ciao"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/hello.txt";
     moves_map_["tu"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/you.txt";
     moves_map_["te"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/you.txt";
@@ -91,6 +92,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
 }
 
 ChatActionServer::~ChatActionServer() {}
+
 
 rclcpp_action::GoalResponse ChatActionServer::handleGoal(
     const rclcpp_action::GoalUUID & uuid,

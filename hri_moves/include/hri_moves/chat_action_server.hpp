@@ -79,8 +79,7 @@ class ChatActionServer : public rclcpp::Node {
   // parameters
 	const double kSecPerWord_ ;
 	const double kForwardParam_ ;
-
-	static std::unordered_map<std::string,std::string> moves_map_;
+	std::unordered_map<std::string,std::string> moves_map_;
 
 };
 
