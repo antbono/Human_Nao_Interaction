@@ -40,8 +40,6 @@
 namespace hri_chat_action_server {
 
 
-
-
 class ChatActionServer : public rclcpp::Node {
  public:
 	explicit ChatActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});

@@ -23,31 +23,44 @@ find_package(rcutils REQUIRED)
 include_directories(include)
 
 #################### JOINTS_PLAY_ACTION_SERVER ###################
-add_library(action_server SHARED
+add_library(joints_play_server SHARED
   src/joints_play_action_server.cpp
 )
-target_include_directories(action_server PRIVATE
+target_include_directories(joints_play_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_definitions(action_server
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_definitions(joints_play_server
   PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
 )
-ament_target_dependencies(action_server
+
+set(JOINTS_PLAY_SERVER_INCLUDE_DEPENDS
   "hri_interfaces"
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components"
-  "nao_lola_command_msgs"
-)
-rclcpp_components_register_node( action_server 
-  PLUGIN "hri_action_cpp::JointsPlayActionServer" 
+  "nao_lola_command_msgs")
+ament_target_dependencies(joints_play_server ${JOINTS_PLAY_SERVER_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${JOINTS_PLAY_SERVER_INCLUDE_DEPENDS})
+
+rclcpp_components_register_node( joints_play_server 
+  PLUGIN "hri_joints_play_action_server::JointsPlayActionServer" 
     EXECUTABLE joints_play_action_server
 )
-install(TARGETS
-  action_server
+
+# Install
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS joints_play_server
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
 
 #################### JOINTS_PLAY_ACTION_CLIENT #####################
 add_library(action_client SHARED
@@ -80,31 +93,43 @@ install(TARGETS
 add_library(head_track_server SHARED
   src/head_track_action_server.cpp
 )
-target_include_directories(head_track_server PRIVATE
+target_include_directories(head_track_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 target_compile_definitions(head_track_server
   PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
 )
-ament_target_dependencies(head_track_server
-  "rclcpp"
-  "rclcpp_action"
-  "rclcpp_components"
-  "nao_lola_command_msgs"
-  "nao_lola_sensor_msgs"
-  "hri_interfaces"
-)
+
+set(HEAD_TRACK_SERVER_INCLUDE_DEPENDS
+  ament_index_cpp
+  rclcpp
+  rclcpp_action
+  rclcpp_components
+  hri_interfaces
+  nao_lola_sensor_msgs
+  nao_lola_command_msgs
+  std_msgs)
+
+ament_target_dependencies(head_track_server ${HEAD_TRACK_SERVER_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${HEAD_TRACK_SERVER_INCLUDE_DEPENDS})
+
 rclcpp_components_register_node(head_track_server 
-  PLUGIN "hri_head_track_cpp::HeadTrackActionServer" 
+  PLUGIN "hri_head_track_action_server::HeadTrackActionServer" 
   EXECUTABLE head_track_action_server
 )
-install(TARGETS
-  head_track_server
+# Install
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS head_track_action_server
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-)
+  INCLUDES DESTINATION include)
 
 
 #################### HEAD_TRACK_CLIENT ###########################
