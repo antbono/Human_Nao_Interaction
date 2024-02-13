@@ -63,30 +63,42 @@ install(
 
 
 #################### JOINTS_PLAY_ACTION_CLIENT #####################
-add_library(action_client SHARED
+add_library(joints_play_client SHARED
   src/joints_play_action_client.cpp
 )
-target_include_directories(action_client PRIVATE
+target_include_directories(joints_play_client PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
-target_compile_definitions(action_client
+target_compile_definitions(joints_play_client
   PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
 )
-ament_target_dependencies(action_client
+
+set(JOINTS_PLAY_CLIENT_INCLUDE_DEPENDS
   "hri_interfaces"
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components")
-rclcpp_components_register_node(action_client 
-  PLUGIN "hri_action_cpp::JointsPlayActionClient" 
+
+ament_target_dependencies(joints_play_client ${JOINTS_PLAY_CLIENT_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${JOINTS_PLAY_CLIENT_INCLUDE_DEPENDS})
+
+rclcpp_components_register_node(joints_play_client 
+  PLUGIN "hri_joints_play_action_client::JointsPlayActionClient" 
     EXECUTABLE joints_play_action_client
 )
-install(TARGETS
-  action_client
+# Install
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS joints_play_client
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
 
 
 #################### HEAD_TRACK_SERVER ###########################
@@ -124,7 +136,7 @@ install(
   DIRECTORY include/
   DESTINATION include)
 install(
-  TARGETS head_track_action_server
+  TARGETS head_track_server
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -270,6 +282,44 @@ install(
   DESTINATION include)
 install(
   TARGETS chat_server
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
+#################### CHAT ACTION CLIENT ###########################
+add_library(chat_client SHARED
+  src/chat_action_client.cpp)
+
+target_include_directories(chat_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+rclcpp_components_register_node(chat_client
+  PLUGIN "hri_chat_action_client::ChatActionClient" 
+  EXECUTABLE chat_action_client
+)
+
+#target_compile_definitions(chat_client
+#  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+
+set(CHAT_CLIENT_INCLUDE_DEPENDS
+  "hri_interfaces"
+  "rclcpp"
+  "rclcpp_action"
+  "rclcpp_components"
+  "std_srvs")
+
+ament_target_dependencies(chat_client ${CHAT_SERVER_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${CHAT_SERVER_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS chat_client
   EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

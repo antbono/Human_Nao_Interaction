@@ -39,6 +39,7 @@
 #include "hri_interfaces/msg/led_indexes.hpp"
 #include "hri_interfaces/msg/led_modes.hpp"
 #include "hri_interfaces/action/leds_play.hpp"
+#include "hri_moves/joints_play_action_client.hpp"
 
 #include "hri_moves/chat_action_server.hpp"
 #include "hri_interfaces/srv/text_to_speech.hpp"
@@ -50,6 +51,7 @@
 #include "rclcpp_components/register_node_macro.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
+
 namespace hri_chat_action_server {
 
 using namespace std::chrono_literals;
@@ -60,11 +62,12 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
 
     this->gstt_srv_client_ = this->create_client<std_srvs::srv::SetBool>("gstt_service");
     this->gtts_srv_client_ = this->create_client<hri_interfaces::srv::TextToSpeech>("gtts_service");
-    this->chat_srv_client_ = this->create_client<hri_interfaces::srv::Chat>("chat_service");
+    this->chat_srv_client_ = this->create_client<hri_interfaces::srv::Chat>("chatGPT_service");
 
     this->joints_act_client_ = rclcpp_action::create_client<hri_interfaces::action::JointsPlay>(
                                    this, "joints_play");
 
+    this->joints_play_ = hri_joints_play_action_client::JointsPlayActionClient(rclcpp::NodeOptions{});
 
     this->action_server_ = rclcpp_action::create_server<hri_interfaces::action::ChatPlay>(
                                this,
@@ -267,6 +270,42 @@ void ChatActionServer::execute(
         //play moves
         t_start = this->now().seconds();
         //rclcpp::sleep_for(std::chrono::milliseconds(50));
+
+        /**
+        for (unsigned i = 0; i < key_words.size(); ++i) {
+
+            t_key_word = key_words_time[i];
+            t_word = t_key_word + t_start;
+            t_cur = this->now().seconds();
+
+            if (t_cur < t_word) {
+                //wait
+                t_sleep = t_word - t_cur;
+                rclcpp::sleep_for(std::chrono::nanoseconds(static_cast<uint64_t>(t_sleep * 1e9)));
+
+                //execute move
+                action_path = moves_map_[key_words[i]];
+
+                auto goal_msg = hri_interfaces::action::JointsPlay::Goal();
+                goal_msg.path = action_path;
+
+                auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SendGoalOptions();
+
+                send_goal_options.goal_response_callback =
+                    std::bind(&ChatActionServer::jointsPlayGoalResponseCallback, this, std::placeholders::_1);
+                send_goal_options.feedback_callback =
+                    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
+                send_goal_options.result_callback =
+                    std::bind(&ChatActionServer::jointsPlayResultCallback, this, std::placeholders::_1);
+
+                RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
+
+                this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
+
+            }
+
+        }
+        */
 
         for (unsigned i = 0; i < key_words.size(); ++i) {
 

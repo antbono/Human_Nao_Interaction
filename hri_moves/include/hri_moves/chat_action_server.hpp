@@ -30,6 +30,7 @@
 #include "hri_interfaces/action/chat_play.hpp"
 #include "hri_interfaces/srv/chat.hpp"
 #include "hri_interfaces/srv/text_to_speech.hpp"
+#include "hri_moves/joints_play_action_client.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -80,6 +81,8 @@ class ChatActionServer : public rclcpp::Node {
 	const double kSecPerWord_ ;
 	const double kForwardParam_ ;
 	std::unordered_map<std::string,std::string> moves_map_;
+
+	hri_joints_play_action_client::JointsPlayActionClient joints_play_;
 
 };
 
