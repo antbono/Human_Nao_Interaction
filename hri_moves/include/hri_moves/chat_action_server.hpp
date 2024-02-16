@@ -82,7 +82,8 @@ class ChatActionServer : public rclcpp::Node {
 	const double kForwardParam_ ;
 	std::unordered_map<std::string,std::string> moves_map_;
 
-	hri_joints_play_action_client::JointsPlayActionClient joints_play_;
+	std::shared_ptr<hri_joints_play_action_client::JointsPlayActionClient> joints_play_;
+
 
 };
 

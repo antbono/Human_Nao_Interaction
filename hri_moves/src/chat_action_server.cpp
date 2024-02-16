@@ -35,16 +35,19 @@
 #include "nao_lola_command_msgs/msg/chest_led.hpp"
 #include "nao_lola_command_msgs/msg/right_foot_led.hpp"
 #include "nao_lola_command_msgs/msg/left_foot_led.hpp"
-#include "hri_moves/led_action_server.hpp"
 #include "hri_interfaces/msg/led_indexes.hpp"
 #include "hri_interfaces/msg/led_modes.hpp"
 #include "hri_interfaces/action/leds_play.hpp"
-#include "hri_moves/joints_play_action_client.hpp"
-
-#include "hri_moves/chat_action_server.hpp"
 #include "hri_interfaces/srv/text_to_speech.hpp"
 #include "hri_interfaces/action/joints_play.hpp"
 #include "hri_interfaces/action/chat_play.hpp"
+
+
+#include "hri_moves/chat_action_server.hpp"
+#include "hri_moves/joints_play_action_client.hpp"
+#include "hri_moves/led_action_server.hpp"
+
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -67,7 +70,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     this->joints_act_client_ = rclcpp_action::create_client<hri_interfaces::action::JointsPlay>(
                                    this, "joints_play");
 
-    this->joints_play_ = hri_joints_play_action_client::JointsPlayActionClient(rclcpp::NodeOptions{});
+    this->joints_play_ = std::make_shared<hri_joints_play_action_client::JointsPlayActionClient>();
 
     this->action_server_ = rclcpp_action::create_server<hri_interfaces::action::ChatPlay>(
                                this,
@@ -261,7 +264,7 @@ void ChatActionServer::execute(
         // Wait for the result.
         if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), gtts_result) ==
                 rclcpp::FutureReturnCode::SUCCESS) {
-            RCLCPP_INFO(this->get_logger(), "tts request completed: %d", gstt_result.get()->success);
+            RCLCPP_INFO(this->get_logger(), "tts request completed: %d", gtts_result.get()->success);
         } else {
             RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
             return;

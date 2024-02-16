@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef HRI_MOVES__JOINTS_PLAY_ACTION_SERVER_HPP_
-#define HRI_MOVES__JOINTS_PLAY_ACTION_SERVER_HPP_
+#ifndef HRI_MOVES__JOINTS_PLAY_ACTION_CLIENT_HPP_
+#define HRI_MOVES__JOINTS_PLAY_ACTION_CLIENT_HPP_
 
 #include <functional>
 #include <future>
@@ -21,16 +21,16 @@
 #include <string>
 #include <sstream>
 
-
-
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "boost/filesystem.hpp"
+
 #include "hri_interfaces/action/joints_play.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-namespace fs = boost::filesystem;
+//namespace fs = boost::filesystem;
 
 
 namespace hri_joints_play_action_client {
@@ -63,4 +63,4 @@ class JointsPlayActionClient: public rclcpp::Node {
 } // namespace hri_joints_play_action_client
 
 
-#endif //HRI_MOVES__JOINTS_PLAY_ACTION_SERVER_HPP_
+#endif //HRI_MOVES__JOINTS_PLAY_ACTION_CLIENT_HPP_

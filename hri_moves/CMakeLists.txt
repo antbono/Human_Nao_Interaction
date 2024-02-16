@@ -219,14 +219,20 @@ install(
 add_library(led_client SHARED
   src/led_action_client.cpp
 )
-target_include_directories(led_client PRIVATE
+
+target_include_directories(led_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
+  $<INSTALL_INTERFACE:include>)
+
 target_compile_definitions(led_client
-  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
+
+rclcpp_components_register_node(led_client
+  PLUGIN "hri_led_action_client::LedsPlayActionClient" 
+  EXECUTABLE led_action_client
 )
-ament_target_dependencies(led_client
+
+set(LED_CLIENT_INCLUDE_DEPENDS
   "rclcpp"
   "rclcpp_action"
   "rclcpp_components"
@@ -234,17 +240,23 @@ ament_target_dependencies(led_client
   "nao_lola_sensor_msgs"
   "hri_interfaces"
   "std_msgs"
-)
-rclcpp_components_register_node(led_client
-  PLUGIN "hri_led_action_client::LedsPlayActionClient" 
-  EXECUTABLE led_action_client
-)
-install(TARGETS
-  led_client
+  )
+
+ament_target_dependencies(led_client ${LED_CLIENT_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${LED_CLIENT_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS led_client
+  EXPORT export_${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
-)
+  INCLUDES DESTINATION include)
+
 
 #################### CHAT ACTION SERVER ###########################
 add_library(chat_server SHARED
@@ -325,6 +337,116 @@ install(
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include)
+
+
+#################### GSTT SERVICE CLIENT ###########################
+
+add_library(gstt_client SHARED
+  src/gstt_service_client.cpp)
+
+target_include_directories(gstt_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+rclcpp_components_register_node(gstt_client
+  PLUGIN "hri_gstt_service_client::GsttServiceClient" 
+  EXECUTABLE gstt_service_client
+)
+
+
+set(GSTT_CLIENT_INCLUDE_DEPENDS
+  "rclcpp"
+  "rclcpp_components"
+  "std_srvs")
+
+ament_target_dependencies(gstt_client ${GSTT_CLIENT_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${GSTT_CLIENT_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS gstt_client
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
+
+#################### GTTS SERVICE CLIENT ###########################
+
+add_library(gtts_client SHARED
+  src/gtts_service_client.cpp)
+
+target_include_directories(gtts_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+rclcpp_components_register_node(gtts_client
+  PLUGIN "hri_gtts_service_client::GttsServiceClient" 
+  EXECUTABLE gtts_service_client
+)
+
+set(GTTS_CLIENT_INCLUDE_DEPENDS
+  "hri_interfaces"
+  "rclcpp"
+  "rclcpp_components"
+  )
+
+ament_target_dependencies(gtts_client ${GTTS_CLIENT_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${GTTS_CLIENT_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS gtts_client
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
+#################### CHAT SERVICE CLIENT ###########################
+
+add_library(chat_serv_client SHARED
+  src/chat_service_client.cpp)
+
+target_include_directories(chat_serv_client PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
+rclcpp_components_register_node(chat_serv_client
+  PLUGIN "hri_chat_service_client::ChatServiceClient" 
+  EXECUTABLE chat_service_client
+)
+
+set(CHAT_CLIENT_INCLUDE_DEPENDS
+  "hri_interfaces"
+  "rclcpp"
+  "rclcpp_components"
+  )
+
+ament_target_dependencies(chat_serv_client ${CHAT_CLIENT_INCLUDE_DEPENDS})
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(${CHAT_CLIENT_INCLUDE_DEPENDS})
+
+install(
+  DIRECTORY include/
+  DESTINATION include)
+install(
+  TARGETS chat_serv_client
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include)
+
+
+
 
 #################### TEST ###############################
 if(BUILD_TESTING)
