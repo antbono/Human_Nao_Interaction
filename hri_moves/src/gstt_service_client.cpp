@@ -42,13 +42,13 @@ GsttServiceClient::GsttServiceClient(const rclcpp::NodeOptions & options)
 GsttServiceClient::~GsttServiceClient() {}
 
 
-void GsttServiceClient::sendSyncReq() {
+std::string GsttServiceClient::sendSyncReq() {
   using namespace std::chrono_literals;
 
   while (!client_ptr_->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for GSTT service. Exiting.");
-      return;
+      return "ERROR";
     }
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GSTT service not available, waiting again...");
   }
@@ -66,8 +66,10 @@ void GsttServiceClient::sendSyncReq() {
     RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
   } else {
     RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
-    return;
+    return "ERROR";
   }
+
+  return recognized_speach;
 
 }
 

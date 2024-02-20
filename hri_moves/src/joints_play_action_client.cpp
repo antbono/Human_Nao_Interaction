@@ -75,7 +75,7 @@ void JointsPlayActionClient::sendGoal()  {
 }*/
 
 
-void JointsPlayActionClient::sendGoal(std::string & action_path)  {
+void JointsPlayActionClient::sendAsyncGoal(std::string & action_path)  {
   using namespace std::placeholders;
 
   //this->timer_->cancel();

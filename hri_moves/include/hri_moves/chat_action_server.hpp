@@ -32,6 +32,10 @@
 #include "hri_interfaces/srv/text_to_speech.hpp"
 #include "hri_moves/joints_play_action_client.hpp"
 
+#include "hri_moves/gstt_service_client.hpp"
+#include "hri_moves/gtts_service_client.hpp"
+#include "hri_moves/chat_service_client.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
@@ -49,9 +53,11 @@ class ChatActionServer : public rclcpp::Node {
  private:
 
 	// services clients
-	rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr gstt_srv_client_;
+	/*rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr gstt_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::TextToSpeech>::SharedPtr gtts_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::Chat>::SharedPtr chat_srv_client_;
+	*/
+
 
 	// chat play action server
 	rclcpp_action::Server<hri_interfaces::action::ChatPlay>::SharedPtr action_server_;
@@ -68,6 +74,7 @@ class ChatActionServer : public rclcpp::Node {
 
 
 	// joints play action client
+	/*
 	rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SharedPtr joints_act_client_;
 	void jointsPlayGoalResponseCallback(
 	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::SharedPtr & goal_handle);
@@ -76,13 +83,18 @@ class ChatActionServer : public rclcpp::Node {
 	  const std::shared_ptr<const hri_interfaces::action::JointsPlay::Feedback> feedback);
 	void jointsPlayResultCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::WrappedResult & result);
+    */
 
   // parameters
 	const double kSecPerWord_ ;
 	const double kForwardParam_ ;
 	std::unordered_map<std::string,std::string> moves_map_;
 
-	std::shared_ptr<hri_joints_play_action_client::JointsPlayActionClient> joints_play_;
+	std::shared_ptr<hri_joints_play_action_client::JointsPlayActionClient> joints_play_client_;
+	std::shared_ptr<hri_gstt_service_client::GsttServiceClient> gstt_srv_client_;
+	std::shared_ptr<hri_gtts_service_client::GttsServiceClient> gtts_srv_client_;
+	std::shared_ptr<hri_chat_service_client::ChatServiceClient> chat_srv_client_;
+
 
 
 };

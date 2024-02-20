@@ -30,7 +30,7 @@ ChatActionClient::ChatActionClient(const rclcpp::NodeOptions & options)
 
   this->timer_ = this->create_wall_timer(
                    std::chrono::milliseconds(500),
-                   std::bind(&ChatActionClient::sendGoal, this));
+                   std::bind(&ChatActionClient::sendAsyncGoal, this));
 
 
   RCLCPP_INFO(this->get_logger(), "ChatActionClient initialized");
@@ -39,7 +39,7 @@ ChatActionClient::ChatActionClient(const rclcpp::NodeOptions & options)
 
 ChatActionClient::~ChatActionClient() {}
 
-void ChatActionClient::sendGoal() {
+void ChatActionClient::sendAsyncGoal() {
   using namespace std::placeholders;
 
   this->timer_->cancel();

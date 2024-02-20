@@ -39,7 +39,7 @@ class GsttServiceClient : public rclcpp::Node {
   explicit GsttServiceClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});
   virtual ~GsttServiceClient();
 
-  void sendSyncReq();
+  std::string sendSyncReq();
 
   private:
 

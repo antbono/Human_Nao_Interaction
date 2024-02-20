@@ -36,14 +36,14 @@ ChatServiceClient::ChatServiceClient(const rclcpp::NodeOptions & options)
 
 ChatServiceClient::~ChatServiceClient() {}
 
-void ChatServiceClient::sendSyncReq(std::string & phrase) {
+std::string ChatServiceClient::sendSyncReq(std::string & phrase) {
 
   using namespace std::chrono_literals;
 
   while (!client_ptr_->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for chat service. Exiting.");
-      return;
+      return "ERROR";
     }
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "chat service not available, waiting again...");
   }
@@ -62,9 +62,10 @@ void ChatServiceClient::sendSyncReq(std::string & phrase) {
     RCLCPP_INFO(this->get_logger(), ("chatGPT answer: " + chatgpt_answer).c_str());
   } else {
     RCLCPP_ERROR(this->get_logger(), "Failed to call chat_service");
-    return;
+    return "ERROR";
   }
   RCLCPP_DEBUG(this->get_logger(), "chat request completed");
+  return chatgpt_answer;
 
 }
 

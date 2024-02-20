@@ -63,14 +63,21 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     : rclcpp::Node("chat_action_server_node", options), kSecPerWord_(0.5), kForwardParam_(5) {
     using namespace std::placeholders;
 
+    /*
     this->gstt_srv_client_ = this->create_client<std_srvs::srv::SetBool>("gstt_service");
     this->gtts_srv_client_ = this->create_client<hri_interfaces::srv::TextToSpeech>("gtts_service");
     this->chat_srv_client_ = this->create_client<hri_interfaces::srv::Chat>("chatGPT_service");
+    */
 
-    this->joints_act_client_ = rclcpp_action::create_client<hri_interfaces::action::JointsPlay>(
-                                   this, "joints_play");
+    this->gstt_srv_client_ = std::make_shared<hri_gstt_service_client::GsttServiceClient>();
+    this->gtts_srv_client_ = std::make_shared<hri_gtts_service_client::GttsServiceClient>();
+    this->chat_srv_client_ = std::make_shared<hri_chat_service_client::ChatServiceClient>();
 
-    this->joints_play_ = std::make_shared<hri_joints_play_action_client::JointsPlayActionClient>();
+
+    //this->joints_act_client_ = rclcpp_action::create_client<hri_interfaces::action::JointsPlay>(
+    //                               this, "joints_play");
+
+    this->joints_play_client_ = std::make_shared<hri_joints_play_action_client::JointsPlayActionClient>();
 
     this->action_server_ = rclcpp_action::create_server<hri_interfaces::action::ChatPlay>(
                                this,
@@ -106,7 +113,7 @@ rclcpp_action::GoalResponse ChatActionServer::handleGoal(
 
     RCLCPP_INFO(this->get_logger(), "Received goal request");
     (void)uuid;
-
+    /*
     while (!gstt_srv_client_->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
             RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for gstt_service. Exiting.");
@@ -138,6 +145,7 @@ rclcpp_action::GoalResponse ChatActionServer::handleGoal(
         }
         RCLCPP_INFO(this->get_logger(), "joints_play action server not available, waiting again...");
     }
+    */
 
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 
@@ -199,6 +207,7 @@ void ChatActionServer::execute(
         // stt service
         RCLCPP_INFO(this->get_logger(), "Ready to listen");
 
+        /*
         auto gstt_result = gstt_srv_client_->async_send_request(gstt_request);
         // Wait for the result.
         if ( rclcpp::spin_until_future_complete(this->get_node_base_interface(), gstt_result) ==
@@ -210,8 +219,14 @@ void ChatActionServer::execute(
             RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
             return;
         }
+        */
+
+        recognized_speach = gstt_srv_client_->sendSyncReq();
 
         // chatgpt
+        chatgpt_answer = chat_srv_client_->sendSyncReq(recognized_speach);
+
+        /*
         auto chat_request = std::make_shared<hri_interfaces::srv::Chat::Request>();
         chat_request->question = recognized_speach;
         auto chat_result = chat_srv_client_->async_send_request(chat_request);
@@ -226,9 +241,10 @@ void ChatActionServer::execute(
             RCLCPP_ERROR(this->get_logger(), "Failed to call chat_service");
             return;
         }
+        */
         RCLCPP_DEBUG(this->get_logger(), "chat request completed");
 
-        // answer text and timing analysis
+        // text and timing analysis of the answer
         num_words = 0;
         words.clear();
         key_words.clear();
@@ -258,6 +274,10 @@ void ChatActionServer::execute(
         }
 
         // speaking
+
+        gtts_srv_client_->sendSyncReq(chatgpt_answer);
+
+        /*
         auto gtts_request = std::make_shared<hri_interfaces::srv::TextToSpeech::Request>();
         gtts_request->text = chatgpt_answer;
         auto gtts_result = gtts_srv_client_->async_send_request(gtts_request);
@@ -269,6 +289,7 @@ void ChatActionServer::execute(
             RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
             return;
         }
+        */
 
         //play moves
         t_start = this->now().seconds();
@@ -324,6 +345,10 @@ void ChatActionServer::execute(
                 //execute move
                 action_path = moves_map_[key_words[i]];
 
+                RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
+                joints_play_client_->sendAsyncGoal(action_path);
+
+                /*
                 auto goal_msg = hri_interfaces::action::JointsPlay::Goal();
                 goal_msg.path = action_path;
 
@@ -339,6 +364,7 @@ void ChatActionServer::execute(
                 RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
 
                 this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
+                */
 
             }
 
@@ -353,7 +379,7 @@ void ChatActionServer::execute(
 }// execute
 
 /*############## JOINTS PLAY ACTION CLIENT ##############*/
-
+/*
 void ChatActionServer::jointsPlayGoalResponseCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::SharedPtr & goal_handle) {
     if (!goal_handle) {
@@ -392,6 +418,7 @@ void ChatActionServer::jointsPlayResultCallback(
         RCLCPP_INFO(this->get_logger(), "Joints posisitions regulary played.");
 
 }
+*/
 
 }  // namespace hri_chat_action_server
 

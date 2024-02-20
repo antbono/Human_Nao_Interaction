@@ -46,7 +46,7 @@ class ChatActionClient : public rclcpp::Node {
 
  private:
 
-	void sendGoal();
+	void sendAsyncGoal();
 	void goalResponseCallback(
 	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::ChatPlay>::SharedPtr & goal_handle);
 	void feedbackCallback(
