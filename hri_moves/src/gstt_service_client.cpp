@@ -25,6 +25,7 @@
 #include "rclcpp_components/register_node_macro.hpp"
 
 #include "hri_moves/gstt_service_client.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 
 namespace hri_gstt_service_client {
