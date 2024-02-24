@@ -86,19 +86,18 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
                                std::bind(&ChatActionServer::handleCancel, this, _1),
                                std::bind(&ChatActionServer::handleAccepted, this, _1));
 
-
-    moves_map_["ciao"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/hello.txt";
-    moves_map_["tu"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/you.txt";
-    moves_map_["te"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/you.txt";
-    moves_map_["grande"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/big.txt";
-    moves_map_["piccolo"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/little.txt";
-    moves_map_["sotto"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/down.txt";
-    moves_map_["sopra"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/up.txt";
-    moves_map_["destra"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/right.txt";
-    moves_map_["sinistra"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/left.txt";
-    moves_map_["paura"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/fear.txt";
-    moves_map_["spavento"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/fear.txt";
-    moves_map_["spaventato"] = "/home/nao/robocup_ws/src/hri/hri_moves/moves/fear.txt";
+    moves_map_["ciao"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["tu"] = "install/hri_moves/include/moves/you.txt";
+    moves_map_["te"] = "install/hri_moves/include/moves/you.txt";
+    moves_map_["grande"] = "install/hri_moves/include/moves/big.txt";
+    moves_map_["piccolo"] = "install/hri_moves/include/moves/little.txt";
+    moves_map_["sotto"] = "install/hri_moves/include/moves/down.txt";
+    moves_map_["sopra"] = "install/hri_moves/include/moves/up.txt";
+    moves_map_["destra"] = "install/hri_moves/include/moves/right.txt";
+    moves_map_["sinistra"] = "install/hri_moves/include/moves/left.txt";
+    moves_map_["paura"] = "install/hri_moves/include/moves/fear.txt";
+    moves_map_["spavento"] = "install/hri_moves/include/moves/fear.txt";
+    moves_map_["spaventato"] = "install/hri_moves/include/moves/fear.txt";
 
     RCLCPP_INFO(this->get_logger(), "ChatActionServer Initialized");
 
