@@ -44,7 +44,7 @@ class JointsPlayActionClient: public rclcpp::Node {
 	explicit JointsPlayActionClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});
 	virtual ~JointsPlayActionClient();
 
-	void sendGoal(std::string & action_path);
+	void sendAsyncGoal(std::string & action_path);
 	//void sendGoal();
 
   private:

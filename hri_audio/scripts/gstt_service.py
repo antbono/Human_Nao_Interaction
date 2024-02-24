@@ -48,6 +48,7 @@ class GSTTService(Node):
             # config=config, enable_voice_activity_events=True, voice_activity_timeout=True, speech_end_timeout=4
         )
         self.srv = self.create_service(SetBool, "gstt_service", self.gstt_callback)
+        self.get_logger().info('GSTTService initialized')
         
     
     def gstt_callback(self, sRequest, sResponse):
@@ -66,6 +67,7 @@ class GSTTService(Node):
                 #listen_print_loop(responses)
                 sResponse.success = True
                 sResponse.message = self.__retrieve_text(responses)
+                self.get_logger().info('GSTTService complete request')
                 return sResponse
         else:
             sResponse.data = False

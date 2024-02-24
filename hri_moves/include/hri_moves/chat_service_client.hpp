@@ -40,7 +40,7 @@ class ChatServiceClient : public rclcpp::Node {
   explicit ChatServiceClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});
   virtual ~ChatServiceClient();
 
-  void sendSyncReq(std::string & phrase);
+  std::string sendSyncReq(std::string & phrase);
 
   private:
 

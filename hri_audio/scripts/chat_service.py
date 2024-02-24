@@ -41,13 +41,13 @@ class ChatService(Node):
         self.get_logger().info('ChatService initialized')
 
     def chat_callback(self, sRequest, sResponse):
-        self.get_logger().info("Incoming request: " + sRequest.text)
-        self.chat_messages.append({"role": "user", "content": sRequest.text})
+        self.get_logger().info("Incoming request: " + sRequest.question)
+        self.chat_messages.append({"role": "user", "content": sRequest.question})
         reply = self.get_response(messages=self.chat_messages)
         reply_text = reply['content'];
         self.get_logger().info("Reply: " + reply_text)
         self.chat_messages.append(reply)
-        sResponse.debug = reply_text
+        sResponse.answer = reply_text
         return sResponse    
         
     def get_response(self, messages:list):

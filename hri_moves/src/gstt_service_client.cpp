@@ -25,6 +25,7 @@
 #include "rclcpp_components/register_node_macro.hpp"
 
 #include "hri_moves/gstt_service_client.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 
 namespace hri_gstt_service_client {
@@ -42,13 +43,13 @@ GsttServiceClient::GsttServiceClient(const rclcpp::NodeOptions & options)
 GsttServiceClient::~GsttServiceClient() {}
 
 
-void GsttServiceClient::sendSyncReq() {
+std::string GsttServiceClient::sendSyncReq() {
   using namespace std::chrono_literals;
 
   while (!client_ptr_->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for GSTT service. Exiting.");
-      return;
+      return "ERROR";
     }
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GSTT service not available, waiting again...");
   }
@@ -56,18 +57,21 @@ void GsttServiceClient::sendSyncReq() {
   std::string recognized_speach;
   auto gstt_request = std::make_shared<std_srvs::srv::SetBool::Request>();
   gstt_request->data = true;
-
+  RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GSTT sending request...");
   auto gstt_result = client_ptr_->async_send_request(gstt_request);
   // Wait for the result.
   if ( rclcpp::spin_until_future_complete(this->get_node_base_interface(), gstt_result) ==
        rclcpp::FutureReturnCode::SUCCESS) {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "inside spin_until_future_complete");
     //if ( rclcpp::spin_until_future_complete(this, gstt_result) == rclcpp::FutureReturnCode::SUCCESS ) {
     recognized_speach = gstt_result.get()->message;
     RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
   } else {
     RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
-    return;
+    return "ERROR";
   }
+
+  return recognized_speach;
 
 }
 
