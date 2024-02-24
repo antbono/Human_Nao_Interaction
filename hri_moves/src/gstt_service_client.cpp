@@ -57,11 +57,12 @@ std::string GsttServiceClient::sendSyncReq() {
   std::string recognized_speach;
   auto gstt_request = std::make_shared<std_srvs::srv::SetBool::Request>();
   gstt_request->data = true;
-
+  RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GSTT sending request...");
   auto gstt_result = client_ptr_->async_send_request(gstt_request);
   // Wait for the result.
   if ( rclcpp::spin_until_future_complete(this->get_node_base_interface(), gstt_result) ==
        rclcpp::FutureReturnCode::SUCCESS) {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "inside spin_until_future_complete");
     //if ( rclcpp::spin_until_future_complete(this, gstt_result) == rclcpp::FutureReturnCode::SUCCESS ) {
     recognized_speach = gstt_result.get()->message;
     RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
