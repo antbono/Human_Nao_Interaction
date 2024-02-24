@@ -22,7 +22,7 @@ namespace hri_joints_play_action_client {
 
 
 JointsPlayActionClient::JointsPlayActionClient(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("chat_action_server_node", options) {
+  : rclcpp::Node("joints_play_action_server_node", options) {
 
   this->client_ptr_ = rclcpp_action::create_client<JointsPlay>(
                         this,
