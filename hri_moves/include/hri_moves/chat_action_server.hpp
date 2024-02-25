@@ -35,6 +35,7 @@
 #include "hri_moves/gstt_service_client.hpp"
 #include "hri_moves/gtts_service_client.hpp"
 #include "hri_moves/chat_service_client.hpp"
+#include "hri_moves/led_action_client.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -93,6 +94,7 @@ class ChatActionServer : public rclcpp::Node {
 	std::shared_ptr<hri_gstt_service_client::GsttServiceClient> gstt_srv_client_;
 	std::shared_ptr<hri_gtts_service_client::GttsServiceClient> gtts_srv_client_;
 	std::shared_ptr<hri_chat_service_client::ChatServiceClient> chat_srv_client_;
+	std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
 
 };
 

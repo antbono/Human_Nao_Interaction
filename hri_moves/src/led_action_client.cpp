@@ -53,7 +53,7 @@ using LedModes = hri_interfaces::msg::LedModes;
 
 
 LedsPlayActionClient::LedsPlayActionClient(const rclcpp::NodeOptions & options)
-  : rclcpp::Node("chat_action_client_node", options) {
+  : rclcpp::Node("led_action_client_node", options) {
 
   this->client_ptr_ = rclcpp_action::create_client<LedsPlay>(
                         this,
@@ -102,7 +102,7 @@ void LedsPlayActionClient::sendGoal()  {
 }
 
 
-void LedsPlayActionClient::eyesOn() {
+void LedsPlayActionClient::eyesStatic( bool flag ) {
 
   using namespace std::placeholders;
   if (!this->client_ptr_->wait_for_action_server()) {
@@ -115,7 +115,12 @@ void LedsPlayActionClient::eyesOn() {
   goal_msg.leds = {LedIndexes::REYE, LedIndexes::LEYE};
   goal_msg.mode = LedModes::STEADY;
   std_msgs::msg::ColorRGBA color;
-  color.r = 1.0; color.g = 1.0; color.b = 1.0;
+  if (flag) {
+    color.r = 1.0; color.g = 1.0; color.b = 1.0;
+  } else {
+    color.r = 0.0; color.g = 0.0; color.b = 0.0;
+  }
+
   for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
     goal_msg.colors[i] = color;
   }
@@ -137,7 +142,7 @@ void LedsPlayActionClient::eyesOn() {
 
 }
 
-void LedsPlayActionClient::headOn() {
+void LedsPlayActionClient::headStatic(bool flag) {
   using namespace std::placeholders;
 
   if (!this->client_ptr_->wait_for_action_server()) {
@@ -150,8 +155,11 @@ void LedsPlayActionClient::headOn() {
   goal_msg.leds = {LedIndexes::HEAD};
   goal_msg.mode = LedModes::STEADY;
   std::array<float, 12> intensities;
-  for (unsigned i = 0; i < intensities.size(); ++i)
-    intensities[i] = 1.0;
+  for (unsigned i = 0; i < intensities.size(); ++i) {
+    if (flag) {
+      intensities[i] = 1.0;
+    } else {intensities[i] = 0.0;}
+  }
 
   goal_msg.intensities = intensities;
 

@@ -46,8 +46,7 @@
 
 
 
-namespace hri_led_action_server 
-{
+namespace hri_led_action_server {
 
 LedsPlayActionServer::LedsPlayActionServer(const rclcpp::NodeOptions & options)
     : rclcpp::Node("leds_play_action_server_node", options) {
@@ -172,8 +171,7 @@ void LedsPlayActionServer::steadyMode(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::LedsPlay>> goal_handle,
     std::array<uint8_t, 2> & leds, float frequency,
     std::array<std_msgs::msg::ColorRGBA, 8> & colors,
-    std::array<float, 12> & intensities)
-{
+    std::array<float, 12> & intensities) {
 
     auto result = std::make_shared<hri_interfaces::action::LedsPlay::Result>();
 
@@ -333,13 +331,13 @@ bool LedsPlayActionServer::blinkingMode(
             loop_rate.sleep();
         }
     }
-
+    return canceled = true;
 }
 
 
 bool LedsPlayActionServer::loopMode(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::LedsPlay>> goal_handle,
-    std::array<uint8_t, 2> & leds, 
+    std::array<uint8_t, 2> & leds,
     float frequency,
     std::array<std_msgs::msg::ColorRGBA, 8> & colors) {
 
@@ -367,7 +365,7 @@ bool LedsPlayActionServer::loopMode(
             loop_rate.sleep();
         }
     }
-
+    return canceled = true;
 }
 
 

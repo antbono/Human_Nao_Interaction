@@ -72,6 +72,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     this->gstt_srv_client_ = std::make_shared<hri_gstt_service_client::GsttServiceClient>();
     this->gtts_srv_client_ = std::make_shared<hri_gtts_service_client::GttsServiceClient>();
     this->chat_srv_client_ = std::make_shared<hri_chat_service_client::ChatServiceClient>();
+    this->led_srv_client_ = std::make_shared<hri_led_action_client::LedsPlayActionClient>();
 
 
     //this->joints_act_client_ = rclcpp_action::create_client<hri_interfaces::action::JointsPlay>(
@@ -194,6 +195,8 @@ void ChatActionServer::execute(
     double t_cur;
     double t_sleep;
 
+    led_srv_client_->eyesStatic(true);
+
     while (rclcpp::ok()) {
 
         if (goal_handle->is_canceling()) {
@@ -222,6 +225,7 @@ void ChatActionServer::execute(
 
         recognized_speach = gstt_srv_client_->sendSyncReq();
 
+        led_srv_client_->headStatic(true);
         // chatgpt
         chatgpt_answer = chat_srv_client_->sendSyncReq(recognized_speach);
 
@@ -273,7 +277,7 @@ void ChatActionServer::execute(
         }
 
         // speaking
-
+        led_srv_client_->headStatic(false);
         gtts_srv_client_->sendSyncReq(chatgpt_answer);
 
         /*
