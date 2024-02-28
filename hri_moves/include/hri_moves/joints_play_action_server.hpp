@@ -17,7 +17,8 @@
 
 #include <functional>
 #include <memory>
-#include <thread>
+#include <thread>         // std::thread, std::this_thread::yield
+#include <atomic>         // std::atomic, std::atomic_flag, ATOMIC_FLAG_INIT
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -58,6 +59,7 @@ class JointsPlayActionServer : public rclcpp::Node {
   nao_lola_command_msgs::msg::JointStiffnesses jstiff_cmd_;
 
   bool fileSuccessfullyRead_;
+  std::atomic<bool> free_;
 
 
   rclcpp_action::GoalResponse handleGoal( const rclcpp_action::GoalUUID & uuid,
