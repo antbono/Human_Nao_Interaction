@@ -36,7 +36,7 @@ class ChatService(Node):
         self.chat_messages = [
         {"role": "system", "content": """Sei un robot umanoide chiamato NAO e parli italiano. Ti piacciono i bambini. 
                                         La tua casa è il laboratorio di robotica del DIMES all'Università della Calabria.
-                                        Per motivi di sicurezza oggi non ti muovi nell'ambiente."""}
+                                        Per motivi di sicurezza oggi non cammini nell'ambiente circostante."""}
         ]
         self.get_logger().info('ChatService initialized')
 
@@ -53,6 +53,7 @@ class ChatService(Node):
     def get_response(self, messages:list):
         response = openai.ChatCompletion.create(
             model = "gpt-3.5-turbo",
+            #model = "gpt-4-turbo-preview",
             messages = messages,
             temperature = 1.0 # 0.0 - 2.0
         )

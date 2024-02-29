@@ -204,7 +204,6 @@ void ChatActionServer::execute(
 
     led_srv_client_->eyesStatic(true);
     led_srv_client_->chestStatic(true);
-    led_srv_client_->earsStatic(true);
 
     while (rclcpp::ok()) {
 
@@ -217,11 +216,11 @@ void ChatActionServer::execute(
 
         // stt service
         RCLCPP_INFO(this->get_logger(), "Ready to listen");
-        led_srv_client_->earsLoop();
+        led_srv_client_->earsStatic(true);
 
         auto gstt_future = gstt_srv_client_->async_send_request(gstt_request);
         auto gstt_result = gstt_future.get();      // wait for the result
-        led_srv_client_->earsStatic(true);
+        led_srv_client_->earsStatic(false);
         recognized_speach = gstt_result.get()->message;
         RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
         
@@ -244,7 +243,7 @@ void ChatActionServer::execute(
 
         //recognized_speach = gstt_srv_client_->sendSyncReq();
 
-        led_srv_client_->headLoop();
+        led_srv_client_->headStatic(true);
         
 
         
@@ -309,7 +308,7 @@ void ChatActionServer::execute(
         }
 
         // speaking
-        led_srv_client_->earsLoop();
+        //led_srv_client_->earsStatic(true);
         
         //gtts_srv_client_->sendSyncReq(chatgpt_answer);
 
@@ -403,7 +402,7 @@ void ChatActionServer::execute(
                 auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SendGoalOptions();
 
                 send_goal_options.goal_response_callback =
-                    std::bind(&ChatActionServer::jointsPlayGoalResponseCallback, this, std::placeholders::_1);
+                    std::bind(&ChatActionServer::jointsPlayGoalRe sponseCallback, this, std::placeholders::_1);
                 send_goal_options.feedback_callback =
                     std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
                 send_goal_options.result_callback =
@@ -421,7 +420,7 @@ void ChatActionServer::execute(
         //user input
         std::cout << "Press after your listenig is finished." << std::endl;
         std::getline(std::cin, user_input);
-        led_srv_client_->earsStatic(false);
+        //led_srv_client_->earsStatic(false);
 
     }//execute while(rclcpp::ok())
 

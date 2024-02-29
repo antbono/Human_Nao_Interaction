@@ -55,8 +55,8 @@ class LedsPlayActionClient : public rclcpp::Node {
 	void headStatic( bool flag );
 	void earsStatic( bool flag );
 	void chestStatic( bool flag );
-	void earsLoop();
-	void headLoop();
+	void earsLoop( bool flag );
+	void headLoop( bool flag );
 
   private:
 
@@ -70,6 +70,11 @@ class LedsPlayActionClient : public rclcpp::Node {
 
 
 	rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SharedPtr client_ptr_;
+
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr head_goal_handle_;
+	//std::shared_future<hri_interfaces::action::LedsPlay::Impl::CancelGoalService::Response::SharedPtr> head_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr eyes_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr ears_goal_handle_;
 
 
 }; // LedsPlayActionClient

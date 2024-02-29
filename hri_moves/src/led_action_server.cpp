@@ -175,7 +175,7 @@ void LedsPlayActionServer::steadyMode(
 
     auto result = std::make_shared<hri_interfaces::action::LedsPlay::Result>();
 
-    if (leds[0] == 0) {
+    if (leds[0] == hri_interfaces::msg::LedIndexes::HEAD) {
         nao_lola_command_msgs::msg::HeadLeds head_leds_msg;
         for (unsigned i = 0; i < nao_lola_command_msgs::msg::HeadLeds::NUM_LEDS; ++i) {
             head_leds_msg.intensities[i] = intensities[i];
@@ -183,7 +183,8 @@ void LedsPlayActionServer::steadyMode(
         head_pub_->publish(head_leds_msg);
     }
 
-    if (leds[0] == 1 && leds[1] == 2) {
+    if ((leds[0] == hri_interfaces::msg::LedIndexes::REYE && leds[1] == hri_interfaces::msg::LedIndexes::LEYE) ||
+        (leds[0] == hri_interfaces::msg::LedIndexes::LEYE && leds[1] == hri_interfaces::msg::LedIndexes::REYE))  {
         nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_msg;
         nao_lola_command_msgs::msg::LeftEyeLeds left_eye_leds_msg;
         for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
@@ -196,7 +197,8 @@ void LedsPlayActionServer::steadyMode(
 
     }
 
-    if (leds[0] == 3 && leds[1] == 4) {
+    if ((leds[0] == hri_interfaces::msg::LedIndexes::REAR && leds[1] == hri_interfaces::msg::LedIndexes::LEAR) ||
+        (leds[0] == hri_interfaces::msg::LedIndexes::LEAR && leds[1] == hri_interfaces::msg::LedIndexes::REAR)) {
         nao_lola_command_msgs::msg::RightEarLeds right_ear_leds_msg;
         nao_lola_command_msgs::msg::LeftEarLeds left_ear_leds_msg;
         for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
@@ -208,7 +210,7 @@ void LedsPlayActionServer::steadyMode(
         left_ear_pub_->publish(left_ear_leds_msg);
     }
 
-    if (leds[0] == 5) {
+    if (leds[0] == hri_interfaces::msg::LedIndexes::CHEST) {
         nao_lola_command_msgs::msg::ChestLed chest_led_msg;
         chest_led_msg.color = colors[0];
         chest_pub_->publish(chest_led_msg);
@@ -225,7 +227,7 @@ bool LedsPlayActionServer::blinkingMode(
     rclcpp::Rate loop_rate(frequency);
     bool canceled = false;
 
-    if (leds[0] == 0) {
+    if (leds[0] == hri_interfaces::msg::LedIndexes::HEAD) {
 
         nao_lola_command_msgs::msg::HeadLeds head_leds_on;
         nao_lola_command_msgs::msg::HeadLeds head_leds_off;
@@ -250,7 +252,8 @@ bool LedsPlayActionServer::blinkingMode(
     }
 
 
-    if (leds[0] == 1 && leds[1] == 2) {
+    if ((leds[0] == hri_interfaces::msg::LedIndexes::REYE && leds[1] == hri_interfaces::msg::LedIndexes::LEYE)||
+        (leds[0] == hri_interfaces::msg::LedIndexes::LEYE && leds[1] == hri_interfaces::msg::LedIndexes::REYE)) {
         nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_off;
         nao_lola_command_msgs::msg::LeftEyeLeds left_eye_leds_off;
         nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_on;
@@ -280,7 +283,8 @@ bool LedsPlayActionServer::blinkingMode(
         }
     }
 
-    if (leds[0] == 3 && leds[1] == 4) {
+    if ((leds[0] == hri_interfaces::msg::LedIndexes::REAR && leds[1] == hri_interfaces::msg::LedIndexes::LEAR) ||
+        (leds[0] == hri_interfaces::msg::LedIndexes::LEAR && leds[1] == hri_interfaces::msg::LedIndexes::REAR)) {
         nao_lola_command_msgs::msg::RightEarLeds right_ear_leds_off;
         nao_lola_command_msgs::msg::LeftEarLeds left_ear_leds_off;
         nao_lola_command_msgs::msg::RightEarLeds right_ear_leds_on;
@@ -310,7 +314,7 @@ bool LedsPlayActionServer::blinkingMode(
         }
     }
 
-    if (leds[0] == 5) {
+    if (leds[0] == hri_interfaces::msg::LedIndexes::CHEST) {
 
         nao_lola_command_msgs::msg::ChestLed chest_led_on;
         nao_lola_command_msgs::msg::ChestLed chest_led_off;
@@ -331,7 +335,8 @@ bool LedsPlayActionServer::blinkingMode(
             loop_rate.sleep();
         }
     }
-    return canceled = true;
+    RCLCPP_ERROR(this->get_logger(), "blinking mode not executed");
+    return canceled = false;
 }
 
 
@@ -344,7 +349,8 @@ bool LedsPlayActionServer::loopMode(
     rclcpp::Rate loop_rate(frequency);
     bool canceled = false;
 
-    if (leds[0] == 0) {
+    //HEAD
+    if (leds[0] == hri_interfaces::msg::LedIndexes::HEAD) {
 
         nao_lola_command_msgs::msg::HeadLeds head_leds_msg;
 
@@ -365,7 +371,134 @@ bool LedsPlayActionServer::loopMode(
             loop_rate.sleep();
         }
     }
-    return canceled = true;
+
+    // EYES
+    if ((leds[0] == hri_interfaces::msg::LedIndexes::REYE && leds[1] == hri_interfaces::msg::LedIndexes::LEYE) ||
+        (leds[0] == hri_interfaces::msg::LedIndexes::LEYE && leds[1] == hri_interfaces::msg::LedIndexes::REYE)) {
+        nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_msg;
+        nao_lola_command_msgs::msg::LeftEyeLeds left_eye_leds_msg;
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS;
+
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+                right_eye_leds_msg.colors[i] = colors[i];
+                left_eye_leds_msg.colors[i] = colors[i];
+            }
+            right_eye_leds_msg.colors[c] = color_off_;
+            left_eye_leds_msg.colors[c] = color_off_;
+            right_eye_pub_->publish(right_eye_leds_msg);
+            left_eye_pub_->publish(left_eye_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+    if (leds[0] == hri_interfaces::msg::LedIndexes::REYE ) {
+        nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_msg;
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS;
+
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+                right_eye_leds_msg.colors[i] = colors[i];
+            }
+            right_eye_leds_msg.colors[c] = color_off_;
+            right_eye_pub_->publish(right_eye_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+    if (leds[0] == hri_interfaces::msg::LedIndexes::LEYE) {
+        nao_lola_command_msgs::msg::LeftEyeLeds left_eye_leds_msg;
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS;
+
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+                left_eye_leds_msg.colors[i] = colors[i];
+            }
+            left_eye_leds_msg.colors[c] = color_off_;
+            left_eye_pub_->publish(left_eye_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+
+    //EARS
+    if ( (leds[0] == hri_interfaces::msg::LedIndexes::REAR && leds[1] == hri_interfaces::msg::LedIndexes::LEAR) ||
+         (leds[0] == hri_interfaces::msg::LedIndexes::LEAR && leds[1] == hri_interfaces::msg::LedIndexes::REAR)) {
+
+        nao_lola_command_msgs::msg::RightEarLeds right_ear_leds_msg;
+        nao_lola_command_msgs::msg::LeftEarLeds left_ear_leds_msg;
+
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS;
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
+                right_ear_leds_msg.intensities[i] = 1.0;
+                left_ear_leds_msg.intensities[i] = 1.0;
+            }
+            right_ear_leds_msg.intensities[c] = 0.0;
+            left_ear_leds_msg.intensities[c] = 0.0;
+            right_ear_pub_->publish(right_ear_leds_msg);
+            left_ear_pub_->publish(left_ear_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+    if (leds[0] == hri_interfaces::msg::LedIndexes::REAR) {
+
+        nao_lola_command_msgs::msg::RightEarLeds right_ear_leds_msg;
+
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS;
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
+                right_ear_leds_msg.intensities[i] = 1.0;
+            }
+            right_ear_leds_msg.intensities[c] = 0.0;
+            right_ear_pub_->publish(right_ear_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+    if (leds[0] == hri_interfaces::msg::LedIndexes::LEAR) {
+
+        nao_lola_command_msgs::msg::LeftEarLeds left_ear_leds_msg;
+
+        uint8_t c = 0;
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                return canceled = true;
+            }
+            c = (c + 1) % nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS;
+            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
+                left_ear_leds_msg.intensities[i] = 1.0;
+            }
+            left_ear_leds_msg.intensities[c] = 0.0;
+            left_ear_pub_->publish(left_ear_leds_msg);
+
+            loop_rate.sleep();
+        }
+    }
+
+    RCLCPP_ERROR(this->get_logger(), "loop mode not executed");
+    return canceled = false;
 }
 
 
