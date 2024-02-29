@@ -67,7 +67,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     this->gstt_srv_client_ = this->create_client<std_srvs::srv::SetBool>("gstt_service");
     this->gtts_srv_client_ = this->create_client<hri_interfaces::srv::TextToSpeech>("gtts_service");
     this->chat_srv_client_ = this->create_client<hri_interfaces::srv::Chat>("chatGPT_service");
-    //this->led_srv_client_ = this-> create_client<hri_interfaces::srv::Chat>("chatGPT_service");
+    this->led_srv_client_ = std::make_shared<hri_led_action_client::LedsPlayActionClient>();
 
     /*
     this->gstt_srv_client_ = std::make_shared<hri_gstt_service_client::GsttServiceClient>();
@@ -202,7 +202,9 @@ void ChatActionServer::execute(
     double t_cur;
     double t_sleep;
 
-    //led_srv_client_->eyesStatic(true);
+    led_srv_client_->eyesStatic(true);
+    led_srv_client_->chestStatic(true);
+    led_srv_client_->earsStatic(true);
 
     while (rclcpp::ok()) {
 
@@ -215,9 +217,11 @@ void ChatActionServer::execute(
 
         // stt service
         RCLCPP_INFO(this->get_logger(), "Ready to listen");
+        led_srv_client_->earsLoop();
 
         auto gstt_future = gstt_srv_client_->async_send_request(gstt_request);
         auto gstt_result = gstt_future.get();      // wait for the result
+        led_srv_client_->earsStatic(true);
         recognized_speach = gstt_result.get()->message;
         RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
         
@@ -240,7 +244,9 @@ void ChatActionServer::execute(
 
         //recognized_speach = gstt_srv_client_->sendSyncReq();
 
-        //led_srv_client_->headStatic(true);
+        led_srv_client_->headLoop();
+        
+
         
 
         // chatgpt service
@@ -250,7 +256,7 @@ void ChatActionServer::execute(
         chat_request->question = recognized_speach;
         auto chat_future = chat_srv_client_->async_send_request(chat_request);
         auto chat_result = chat_future.get(); // wait for the result
-        
+        led_srv_client_->headStatic(false);
         chatgpt_answer = chat_result.get()->answer;
         RCLCPP_INFO(this->get_logger(), ("chatGPT answer: " + chatgpt_answer).c_str());
     
@@ -303,7 +309,7 @@ void ChatActionServer::execute(
         }
 
         // speaking
-        //led_srv_client_->headStatic(false);
+        led_srv_client_->earsLoop();
         
         //gtts_srv_client_->sendSyncReq(chatgpt_answer);
 
@@ -415,6 +421,7 @@ void ChatActionServer::execute(
         //user input
         std::cout << "Press after your listenig is finished." << std::endl;
         std::getline(std::cin, user_input);
+        led_srv_client_->earsStatic(false);
 
     }//execute while(rclcpp::ok())
 

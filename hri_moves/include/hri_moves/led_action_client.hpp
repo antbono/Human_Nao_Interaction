@@ -51,9 +51,12 @@ class LedsPlayActionClient : public rclcpp::Node {
 	explicit LedsPlayActionClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});
 	virtual ~LedsPlayActionClient();
 
-	void sendGoal();
 	void eyesStatic( bool flag );
 	void headStatic( bool flag );
+	void earsStatic( bool flag );
+	void chestStatic( bool flag );
+	void earsLoop();
+	void headLoop();
 
   private:
 

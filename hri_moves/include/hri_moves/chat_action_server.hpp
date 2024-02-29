@@ -57,7 +57,9 @@ class ChatActionServer : public rclcpp::Node {
 	rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr gstt_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::TextToSpeech>::SharedPtr gtts_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::Chat>::SharedPtr chat_srv_client_;
-	
+
+	//client classes
+	std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
 
 	// chat play action server
 	rclcpp_action::Server<hri_interfaces::action::ChatPlay>::SharedPtr action_server_;
@@ -94,8 +96,9 @@ class ChatActionServer : public rclcpp::Node {
 	std::shared_ptr<hri_gstt_service_client::GsttServiceClient> gstt_srv_client_;
 	std::shared_ptr<hri_gtts_service_client::GttsServiceClient> gtts_srv_client_;
 	std::shared_ptr<hri_chat_service_client::ChatServiceClient> chat_srv_client_;
-	std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
 	*/
+	
+	
 
 };
 

@@ -2,15 +2,15 @@
 uint8[2] leds
 uint8 mode
 float32 frequency
-std_msgs/ColorRGBA[8] colors 		# max 8 colors per leds
-float32[12] intensities				# max 12 leds
+std_msgs/ColorRGBA[8] colors 		# max 8 colors for eyes
+float32[12] intensities				# max 12 leds for head
 float32 duration #seconds
 ---
-# Result: success tracking the target feature
+# Result
 bool success
 
 ---
-#Feedback: center of the tracked feature
+#Feedback
  
 
 
