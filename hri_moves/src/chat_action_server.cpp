@@ -93,12 +93,17 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     moves_map_["tu"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["te"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["grande"] = "install/hri_moves/include/moves/big.txt";
+    moves_map_["grandi"] = "install/hri_moves/include/moves/big.txt";
     moves_map_["piccolo"] = "install/hri_moves/include/moves/little.txt";
+    moves_map_["piccoli"] = "install/hri_moves/include/moves/little.txt";
+    moves_map_["piccola"] = "install/hri_moves/include/moves/little.txt";
+    moves_map_["piccole"] = "install/hri_moves/include/moves/little.txt";
     moves_map_["sotto"] = "install/hri_moves/include/moves/down.txt";
     moves_map_["sopra"] = "install/hri_moves/include/moves/up.txt";
     moves_map_["destra"] = "install/hri_moves/include/moves/right.txt";
     moves_map_["sinistra"] = "install/hri_moves/include/moves/left.txt";
     moves_map_["paura"] = "install/hri_moves/include/moves/fear.txt";
+    moves_map_["paure"] = "install/hri_moves/include/moves/fear.txt";
     moves_map_["spavento"] = "install/hri_moves/include/moves/fear.txt";
     moves_map_["spaventato"] = "install/hri_moves/include/moves/fear.txt";
 
