@@ -26,6 +26,10 @@
 //#include <vector>
 
 //#include <chrono>
+#include "hri_interfaces/action/leds_play.hpp"
+#include "hri_interfaces/msg/led_indexes.hpp"
+#include "hri_interfaces/msg/led_modes.hpp"
+#include "hri_interfaces/action/leds_play.hpp"
 #include "hri_interfaces/action/joints_play.hpp"
 #include "hri_interfaces/action/chat_play.hpp"
 #include "hri_interfaces/srv/chat.hpp"
@@ -59,7 +63,7 @@ class ChatActionServer : public rclcpp::Node {
 	rclcpp::Client<hri_interfaces::srv::Chat>::SharedPtr chat_srv_client_;
 
 	//client classes
-	std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
+	//std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
 
 	// chat play action server
 	rclcpp_action::Server<hri_interfaces::action::ChatPlay>::SharedPtr action_server_;
@@ -84,9 +88,20 @@ class ChatActionServer : public rclcpp::Node {
 	  const std::shared_ptr<const hri_interfaces::action::JointsPlay::Feedback> feedback);
 	void jointsPlayResultCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::WrappedResult & result);
-    
 
-  // parameters
+    //leds play action client
+    rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SharedPtr leds_play_act_client_;
+
+    void ledsPlayGoalResponseCallback(
+	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr & goal_handle);
+	void ledsPlayFeedbackCallback(
+	  rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr,
+	  const std::shared_ptr<const hri_interfaces::action::LedsPlay::Feedback> feedback);
+	void ledsPlayResultCallback(
+    const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::WrappedResult & result);
+
+
+  	// parameters
 	const double kSecPerWord_ ;
 	const double kForwardParam_ ;
 	std::unordered_map<std::string,std::string> moves_map_;
@@ -98,7 +113,18 @@ class ChatActionServer : public rclcpp::Node {
 	std::shared_ptr<hri_chat_service_client::ChatServiceClient> chat_srv_client_;
 	*/
 	
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr head_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr eyes_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr ears_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr chest_goal_handle_;
 	
+	void eyesStatic(bool flag);
+	void earsStatic(bool flag);
+	void chestStatic(bool flag);
+	void headStatic(bool flag);
+	void headLoop(bool flag);
+	void earsLoop(bool flag);
+
 
 };
 
