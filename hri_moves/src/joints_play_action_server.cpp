@@ -38,6 +38,8 @@ JointsPlayActionServer::JointsPlayActionServer(const rclcpp::NodeOptions & optio
   this->jstiff_pub_ = this->create_publisher<nao_lola_command_msgs::msg::JointStiffnesses>(
                         "effectors/joint_stiffnesses", 10);
 
+  free_ = true;
+
   RCLCPP_INFO(this->get_logger(), "JointsPlayActionServer Initialized");
 }
 
@@ -46,16 +48,16 @@ JointsPlayActionServer::~JointsPlayActionServer() {}
 nao_lola_command_msgs::msg::JointIndexes joint_indexes_msg_;
 
 uint8_t rec_joint_indexes_ [10] =  {  joint_indexes_msg_.LSHOULDERPITCH,
-                                        joint_indexes_msg_.LSHOULDERROLL,
-                                        joint_indexes_msg_.LELBOWYAW,
-                                        joint_indexes_msg_.LELBOWROLL,
-                                        joint_indexes_msg_.LWRISTYAW,
-                                        joint_indexes_msg_.RSHOULDERPITCH,
-                                        joint_indexes_msg_.RSHOULDERROLL,
-                                        joint_indexes_msg_.RELBOWYAW,
-                                        joint_indexes_msg_.RELBOWROLL,
-                                        joint_indexes_msg_.RWRISTYAW
-                                     };
+                                      joint_indexes_msg_.LSHOULDERROLL,
+                                      joint_indexes_msg_.LELBOWYAW,
+                                      joint_indexes_msg_.LELBOWROLL,
+                                      joint_indexes_msg_.LWRISTYAW,
+                                      joint_indexes_msg_.RSHOULDERPITCH,
+                                      joint_indexes_msg_.RSHOULDERROLL,
+                                      joint_indexes_msg_.RELBOWYAW,
+                                      joint_indexes_msg_.RELBOWROLL,
+                                      joint_indexes_msg_.RWRISTYAW
+                                   };
 
 uint8_t num_rec_joints_ = sizeof(rec_joint_indexes_) / sizeof(rec_joint_indexes_[0]);
 
@@ -66,27 +68,36 @@ rclcpp_action::GoalResponse JointsPlayActionServer::handleGoal(
   RCLCPP_INFO( this->get_logger(), ("Received goal request with file path: " + goal->path).c_str() );
   (void)uuid;
 
+  //check the bool variable to avoid concurrency
 
-  ifs_.open( goal->path, std::ifstream::in);
-  if (ifs_.is_open()) {
-    //RCLCPP_WARN( this->get_logger(), ("File succesfully loaded from " + goal->path).c_str() );
-    fileSuccessfullyRead_ = true;
+  if (free_.load()) {
+    free_.store(false);
+    ifs_.open( goal->path, std::ifstream::in);
+    if (ifs_.is_open()) {
+      //RCLCPP_WARN( this->get_logger(), ("File succesfully loaded from " + goal->path).c_str() );
+      fileSuccessfullyRead_ = true;
 
-    recorded_joints_.clear();
-    float joint_value;
-    std::string line;
-    while (!ifs_.eof()) {
-      std::getline(ifs_, line, '\n');
-      joint_value = std::stof(line);
-      recorded_joints_.emplace_back( joint_value );
+      recorded_joints_.clear();
+      float joint_value;
+      std::string line;
+      while (!ifs_.eof()) {
+        std::getline(ifs_, line, '\n');
+        joint_value = std::stof(line);
+        recorded_joints_.emplace_back( joint_value );
+      }
+      ifs_.close();
+      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    } else {
+      RCLCPP_ERROR(this->get_logger(), ("Couldn't open file " + goal->path).c_str() );
+      fileSuccessfullyRead_ = false;
+      free_.store(true);
+      return rclcpp_action::GoalResponse::REJECT;
     }
-    ifs_.close();
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
   } else {
-    RCLCPP_ERROR(this->get_logger(), ("Couldn't open file " + goal->path).c_str() );
-    fileSuccessfullyRead_ = false;
+    RCLCPP_ERROR(this->get_logger(), "Action server already executing " );
     return rclcpp_action::GoalResponse::REJECT;
   }
+
 }
 
 rclcpp_action::CancelResponse JointsPlayActionServer::handleCancel(
@@ -149,6 +160,7 @@ void JointsPlayActionServer::execute(const std::shared_ptr<GoalHandleJointsPlay>
   if (rclcpp::ok()) {
     result->success = true;
     goal_handle->succeed(result);
+    free_.store(true);
     RCLCPP_INFO(this->get_logger(), "Goal succeeded");
   }
 }

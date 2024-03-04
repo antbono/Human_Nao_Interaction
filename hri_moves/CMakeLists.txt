@@ -285,7 +285,7 @@ set(CHAT_SERVER_INCLUDE_DEPENDS
   "rclcpp_components"
   "std_srvs")
 
-target_link_libraries(chat_server joints_play_client gstt_client gtts_client chat_serv_client)
+target_link_libraries(chat_server joints_play_client gstt_client gtts_client chat_serv_client led_client)
 ament_target_dependencies(chat_server ${CHAT_SERVER_INCLUDE_DEPENDS})
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${CHAT_SERVER_INCLUDE_DEPENDS})
@@ -446,7 +446,11 @@ install(
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION include)
 
-
+  # Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 
 #################### TEST ###############################

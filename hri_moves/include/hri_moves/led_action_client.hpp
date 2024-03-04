@@ -47,26 +47,34 @@
 namespace hri_led_action_client {
 
 class LedsPlayActionClient : public rclcpp::Node {
- public:
+  public:
 	explicit LedsPlayActionClient(const rclcpp::NodeOptions & options = rclcpp::NodeOptions{});
 	virtual ~LedsPlayActionClient();
 
-	void sendGoal();
-	void eyesOn();
-	void headOn();
+	void eyesStatic( bool flag );
+	void headStatic( bool flag );
+	void earsStatic( bool flag );
+	void chestStatic( bool flag );
+	void earsLoop( bool flag );
+	void headLoop( bool flag );
 
- private:
+  private:
 
 	void goalResponseCallback(
-	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr & goal_handle);
+	    const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr & goal_handle);
 	void feedbackCallback(
-	  rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr,
-	  const std::shared_ptr<const hri_interfaces::action::LedsPlay::Feedback> feedback);
+	    rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr,
+	    const std::shared_ptr<const hri_interfaces::action::LedsPlay::Feedback> feedback);
 	void resultCallback(
-	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::WrappedResult & result);
+	    const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::WrappedResult & result);
 
 
 	rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SharedPtr client_ptr_;
+
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr head_goal_handle_;
+	//std::shared_future<hri_interfaces::action::LedsPlay::Impl::CancelGoalService::Response::SharedPtr> head_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr eyes_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr ears_goal_handle_;
 
 
 }; // LedsPlayActionClient

@@ -12,19 +12,25 @@ def generate_launch_description():
         Node(
             package='sound_play',
             #namespace='turtlesim1',
-            executable='soundplay_node',
+            executable='soundplay_node.py',
             name='soundplay_node'
         ),
         Node(
             package='hri_audio',
             #namespace='turtlesim2',
-            executable='gstt_service',
+            executable='gstt_service.py',
             name='gstt_service_node'
         ),
         Node(
             package='hri_audio',
             #namespace='turtlesim2',
-            executable='gtts_service',
+            executable='chat_service.py',
+            name='chat_service_node'
+        ),
+        Node(
+            package='hri_audio',
+            #namespace='turtlesim2',
+            executable='gtts_service.py',
             name='gtts_service_node'
         ),
         Node(
@@ -34,8 +40,8 @@ def generate_launch_description():
             name='joints_play_action_server'
         ),
         Node(
-            package='hri_audio',
-            executable='chat_move_node',
-            name='chat_move_node'
+            package='hri_moves',
+            executable='chat_action_client',
+            name='chat_action_client'
         ),
     ])

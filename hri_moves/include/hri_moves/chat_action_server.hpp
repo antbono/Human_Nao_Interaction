@@ -26,6 +26,10 @@
 //#include <vector>
 
 //#include <chrono>
+#include "hri_interfaces/action/leds_play.hpp"
+#include "hri_interfaces/msg/led_indexes.hpp"
+#include "hri_interfaces/msg/led_modes.hpp"
+#include "hri_interfaces/action/leds_play.hpp"
 #include "hri_interfaces/action/joints_play.hpp"
 #include "hri_interfaces/action/chat_play.hpp"
 #include "hri_interfaces/srv/chat.hpp"
@@ -35,6 +39,7 @@
 #include "hri_moves/gstt_service_client.hpp"
 #include "hri_moves/gtts_service_client.hpp"
 #include "hri_moves/chat_service_client.hpp"
+#include "hri_moves/led_action_client.hpp"
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -53,10 +58,12 @@ class ChatActionServer : public rclcpp::Node {
  private:
 
 	// services clients
-	/*rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr gstt_srv_client_;
+	rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr gstt_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::TextToSpeech>::SharedPtr gtts_srv_client_;
 	rclcpp::Client<hri_interfaces::srv::Chat>::SharedPtr chat_srv_client_;
-	*/
+
+	//client classes
+	//std::shared_ptr<hri_led_action_client::LedsPlayActionClient> led_srv_client_;
 
 	// chat play action server
 	rclcpp_action::Server<hri_interfaces::action::ChatPlay>::SharedPtr action_server_;
@@ -73,7 +80,6 @@ class ChatActionServer : public rclcpp::Node {
 
 
 	// joints play action client
-	/*
 	rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SharedPtr joints_act_client_;
 	void jointsPlayGoalResponseCallback(
 	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::SharedPtr & goal_handle);
@@ -82,17 +88,43 @@ class ChatActionServer : public rclcpp::Node {
 	  const std::shared_ptr<const hri_interfaces::action::JointsPlay::Feedback> feedback);
 	void jointsPlayResultCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::WrappedResult & result);
-    */
 
-  // parameters
+    //leds play action client
+    rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SharedPtr leds_play_act_client_;
+
+    void ledsPlayGoalResponseCallback(
+	  const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr & goal_handle);
+	void ledsPlayFeedbackCallback(
+	  rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr,
+	  const std::shared_ptr<const hri_interfaces::action::LedsPlay::Feedback> feedback);
+	void ledsPlayResultCallback(
+    const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::WrappedResult & result);
+
+
+  	// parameters
 	const double kSecPerWord_ ;
 	const double kForwardParam_ ;
 	std::unordered_map<std::string,std::string> moves_map_;
 
+	/*
 	std::shared_ptr<hri_joints_play_action_client::JointsPlayActionClient> joints_play_client_;
 	std::shared_ptr<hri_gstt_service_client::GsttServiceClient> gstt_srv_client_;
 	std::shared_ptr<hri_gtts_service_client::GttsServiceClient> gtts_srv_client_;
 	std::shared_ptr<hri_chat_service_client::ChatServiceClient> chat_srv_client_;
+	*/
+	
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr head_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr eyes_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr ears_goal_handle_;
+	rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr chest_goal_handle_;
+	
+	void eyesStatic(bool flag);
+	void earsStatic(bool flag);
+	void chestStatic(bool flag);
+	void headStatic(bool flag);
+	void headLoop(bool flag);
+	void earsLoop(bool flag);
+
 
 };
 
