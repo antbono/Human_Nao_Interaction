@@ -136,7 +136,7 @@ def listen_print_loop(responses):
 def main():
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
-    language_code = "it-IT"  # a BCP-47 language tag
+    language_code = "en-US"  # a BCP-47 language tag
 
     client = speech.SpeechClient()
     config = speech.RecognitionConfig(
@@ -147,7 +147,7 @@ def main():
 
     streaming_config = speech.StreamingRecognitionConfig(
         #config=config, interim_results=True
-        config=config, enable_voice_activity_events=True, voice_activity_timeout=True, speech_end_timeout=4
+        config=config, enable_voice_activity_events=True, voice_activity_timeout=True, speech_end_timeout=20
     )
 
     with MicrophoneStream(RATE, CHUNK) as stream:

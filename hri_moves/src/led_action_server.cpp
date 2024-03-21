@@ -92,7 +92,7 @@ rclcpp_action::GoalResponse LedsPlayActionServer::handleGoal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const hri_interfaces::action::LedsPlay::Goal> goal) {
 
-    RCLCPP_INFO( this->get_logger(), "Received goal request");
+    RCLCPP_INFO( this->get_logger(), "Received LED goal request");
     (void)uuid;
 
     //TODO checks on goal integrity
@@ -103,7 +103,7 @@ rclcpp_action::GoalResponse LedsPlayActionServer::handleGoal(
 
 rclcpp_action::CancelResponse LedsPlayActionServer::handleCancel(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::LedsPlay>> goal_handle) {
-    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+    RCLCPP_INFO(this->get_logger(), "Received request to cancel LED goal");
     (void)goal_handle;
     return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -118,7 +118,7 @@ void LedsPlayActionServer::handleAccepted(
 void LedsPlayActionServer::execute(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::LedsPlay>> goal_handle) {
 
-    RCLCPP_INFO(this->get_logger(), "Executing goal");
+    RCLCPP_INFO(this->get_logger(), "Executing LED goal");
 
     auto goal = goal_handle->get_goal();
     bool canceled = false;
@@ -143,7 +143,7 @@ void LedsPlayActionServer::execute(
         if (canceled) {
             result->success = true;
             goal_handle->canceled(result);
-            RCLCPP_INFO(this->get_logger(), "Goal canceled");
+            RCLCPP_INFO(this->get_logger(), "LED Goal canceled");
             return;
         }
         //
@@ -153,7 +153,7 @@ void LedsPlayActionServer::execute(
         if (canceled) {
             result->success = true;
             goal_handle->canceled(result);
-            RCLCPP_INFO(this->get_logger(), "Goal canceled");
+            RCLCPP_INFO(this->get_logger(), "LED Goal canceled");
             return;
         }
     }
@@ -161,7 +161,7 @@ void LedsPlayActionServer::execute(
     if (rclcpp::ok()) {
         result->success = true;
         goal_handle->succeed(result);
-        RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+        RCLCPP_INFO(this->get_logger(), "LED Goal succeeded");
     }
 
 }
@@ -335,7 +335,7 @@ bool LedsPlayActionServer::blinkingMode(
             loop_rate.sleep();
         }
     }
-    RCLCPP_ERROR(this->get_logger(), "blinking mode not executed");
+    RCLCPP_ERROR(this->get_logger(), "LED blinking mode not executed");
     return canceled = false;
 }
 
@@ -497,7 +497,7 @@ bool LedsPlayActionServer::loopMode(
         }
     }
 
-    RCLCPP_ERROR(this->get_logger(), "loop mode not executed");
+    RCLCPP_ERROR(this->get_logger(), "LED loop mode not executed");
     return canceled = false;
 }
 

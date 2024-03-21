@@ -95,7 +95,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
                                std::bind(&ChatActionServer::handleCancel, this, _1),
                                std::bind(&ChatActionServer::handleAccepted, this, _1));
 
-    moves_map_["ciao"] = "install/hri_moves/include/moves/hello.txt";
+    /*moves_map_["ciao"] = "install/hri_moves/include/moves/hello.txt";
     moves_map_["tu"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["te"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["grande"] = "install/hri_moves/include/moves/big.txt";
@@ -111,7 +111,18 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     moves_map_["paura"] = "install/hri_moves/include/moves/fear.txt";
     moves_map_["paure"] = "install/hri_moves/include/moves/fear.txt";
     moves_map_["spavento"] = "install/hri_moves/include/moves/fear.txt";
-    moves_map_["spaventato"] = "install/hri_moves/include/moves/fear.txt";
+    moves_map_["spaventato"] = "install/hri_moves/include/moves/fear.txt";*/
+    moves_map_["hello"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["hi"] = "install/hri_moves/include/moves/hello.txt";
+    //moves_map_["you"] = "install/hri_moves/include/moves/you.txt";
+    moves_map_["big"] = "install/hri_moves/include/moves/big.txt";
+    moves_map_["little"] = "install/hri_moves/include/moves/little.txt";
+    moves_map_["down"] = "install/hri_moves/include/moves/down.txt";
+    moves_map_["up"] = "install/hri_moves/include/moves/up.txt";
+    moves_map_["right"] = "install/hri_moves/include/moves/right.txt";
+    moves_map_["left"] = "install/hri_moves/include/moves/left.txt";
+    moves_map_["fear"] = "install/hri_moves/include/moves/fear.txt";
+    moves_map_["scared"] = "install/hri_moves/include/moves/fear.txt";
 
     RCLCPP_INFO(this->get_logger(), "ChatActionServer Initialized");
 
@@ -124,7 +135,7 @@ rclcpp_action::GoalResponse ChatActionServer::handleGoal(
     const rclcpp_action::GoalUUID & uuid,
     std::shared_ptr<const hri_interfaces::action::ChatPlay::Goal> goal) {
 
-    RCLCPP_INFO(this->get_logger(), "Received goal request");
+    RCLCPP_INFO(this->get_logger(), "Received chat goal request");
     (void)uuid;
 
     while (!gstt_srv_client_->wait_for_service(1s)) {
@@ -166,7 +177,7 @@ rclcpp_action::GoalResponse ChatActionServer::handleGoal(
 
 rclcpp_action::CancelResponse ChatActionServer::handleCancel(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::ChatPlay>> goal_handle) {
-    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+    RCLCPP_INFO(this->get_logger(), "Received request to cancel chat goal");
     (void)goal_handle;
     return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -180,8 +191,9 @@ void ChatActionServer::handleAccepted(
 
 void ChatActionServer::execute(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::ChatPlay>> goal_handle) {
-
-    RCLCPP_INFO(this->get_logger(), "Executing goal");
+    using namespace std::placeholders;
+\
+    RCLCPP_INFO(this->get_logger(), "Executing chat goal");
 
     auto chat_goal = goal_handle->get_goal();
     auto chat_feedback = std::make_shared<hri_interfaces::action::ChatPlay::Feedback>();
@@ -216,20 +228,63 @@ void ChatActionServer::execute(
         if (goal_handle->is_canceling()) {
             chat_result->success = true;
             goal_handle->canceled(chat_result);
-            RCLCPP_INFO(this->get_logger(), "Goal canceled");
+            RCLCPP_INFO(this->get_logger(), "Chat Goal canceled");
             return;
         }
 
         // stt service
         RCLCPP_INFO(this->get_logger(), "Ready to listen");
+
+        //ears static
+        if (!this->leds_play_act_client_->wait_for_action_server()) {
+            RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
+            rclcpp::shutdown();
+        }
+
+
+        auto goal_msg = hri_interfaces::action::LedsPlay::Goal();
+
+        goal_msg.leds = {hri_interfaces::msg::LedIndexes::REAR, hri_interfaces::msg::LedIndexes::LEAR};
+        goal_msg.mode = hri_interfaces::msg::LedModes::STEADY;
+        for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
+            goal_msg.intensities[i] = 0.0;
+        }
+
+        auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SendGoalOptions();
+
+        send_goal_options.goal_response_callback =
+            std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
+
+        send_goal_options.feedback_callback =
+            std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+
+        send_goal_options.result_callback =
+            std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
+
+        RCLCPP_INFO(this->get_logger(), "ledsPlay ears static Sending goal:" );
+
+        auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+
+        // synchronous
+        auto goal_handle = goal_handle_future.get();
+        auto result_future = leds_play_act_client_->async_get_result(goal_handle);
+        auto result = result_future.get();
+
+        RCLCPP_INFO(this->get_logger(), "ledsPlay synchronous call done" );
+
         this->earsLoop(true);
-        
+
+        //TTS
+
         auto gstt_future = gstt_srv_client_->async_send_request(gstt_request);
+        RCLCPP_INFO(this->get_logger(), "gstt request sent" );
         auto gstt_result = gstt_future.get();      // wait for the result
+        RCLCPP_INFO(this->get_logger(), "gstt gets result" );
+
         this->earsLoop(false);
         recognized_speach = gstt_result.get()->message;
-        RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
-        
+        RCLCPP_INFO(this->get_logger(), ("Recognized speech: " + recognized_speach).c_str());
+
 
         /*
         auto gstt_result = gstt_srv_client_->async_send_request(gstt_request);
@@ -313,7 +368,7 @@ void ChatActionServer::execute(
 
         }
 
-        // speaking
+        // speaking TTS
         this->earsStatic(true);
 
         //gtts_srv_client_->sendSyncReq(chatgpt_answer);
@@ -321,8 +376,8 @@ void ChatActionServer::execute(
         auto gtts_request = std::make_shared<hri_interfaces::srv::TextToSpeech::Request>();
         gtts_request->text = chatgpt_answer;
         auto gtts_future = gtts_srv_client_->async_send_request(gtts_request);
-        auto gtts_result = gtts_future.get(); // Wait for the result.
 
+        auto gtts_result = gtts_future.get(); // Wait for the result.
         if (gtts_result.get()->success) {
             RCLCPP_INFO(this->get_logger(), "tts request completed: %d", gtts_result.get()->success);
         } else {
@@ -369,12 +424,12 @@ void ChatActionServer::execute(
 
                 send_goal_options.goal_response_callback =
                     std::bind(&ChatActionServer::jointsPlayGoalResponseCallback, this, std::placeholders::_1);
-                send_goal_options.feedback_callback =
-                    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
+                //send_goal_options.feedback_callback =
+                //    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
                 send_goal_options.result_callback =
                     std::bind(&ChatActionServer::jointsPlayResultCallback, this, std::placeholders::_1);
 
-                RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
+                RCLCPP_INFO(this->get_logger(), (" jointsPlay Sending goal: " + action_path).c_str() );
 
                 this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
 
@@ -424,9 +479,8 @@ void ChatActionServer::execute(
         }*/
 
         //user input
-        std::cout << "Press after your listenig is finished." << std::endl;
+        std::cout << "Press after your listening is finished." << std::endl;
         std::getline(std::cin, user_input);
-        this->earsStatic(false);
 
     }//execute while(rclcpp::ok())
 
@@ -437,9 +491,9 @@ void ChatActionServer::execute(
 void ChatActionServer::ledsPlayGoalResponseCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr & goal_handle) {
     if (!goal_handle) {
-        RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Goal was rejected by server");
     } else {
-        RCLCPP_INFO(this->get_logger(), "Goal accepted by server, waiting for result");
+        RCLCPP_INFO(this->get_logger(), "ledsPlay Goal accepted by server, waiting for result");
     }
 }
 void ChatActionServer::ledsPlayFeedbackCallback(
@@ -447,19 +501,20 @@ void ChatActionServer::ledsPlayFeedbackCallback(
     const std::shared_ptr<const hri_interfaces::action::LedsPlay::Feedback> feedback) {
 
 }
+
 void ChatActionServer::ledsPlayResultCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::WrappedResult & result) {
     switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
         break;
     case rclcpp_action::ResultCode::ABORTED:
-        RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Goal was aborted");
         return;
     case rclcpp_action::ResultCode::CANCELED:
-        RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Goal was canceled");
         return;
     default:
-        RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Unknown result code");
         return;
     }
 
@@ -472,7 +527,7 @@ void  ChatActionServer::eyesStatic( bool flag ) {
 
     using namespace std::placeholders;
     if (!this->leds_play_act_client_->wait_for_action_server()) {
-        RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
         rclcpp::shutdown();
     }
 
@@ -496,23 +551,27 @@ void  ChatActionServer::eyesStatic( bool flag ) {
     send_goal_options.goal_response_callback =
         std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
 
-    send_goal_options.feedback_callback =
-        std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+    //send_goal_options.feedback_callback =
+    //    std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
 
     send_goal_options.result_callback =
         std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
 
-    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+    RCLCPP_INFO(this->get_logger(), "ledsPlay eyesStatic Sending goal:" );
 
-    this->leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
-
+    auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    RCLCPP_INFO(this->get_logger(), "ledsPlay eyesStatic goal sent: %d", flag);
+    // synchronous
+    //auto goal_handle = goal_handle_future.get();
+    //auto result_future = leds_play_act_client_->async_get_result(goal_handle);
+    //auto result = result_future.get();
 }
 
 void  ChatActionServer::chestStatic( bool flag ) {
 
     using namespace std::placeholders;
     if (!this->leds_play_act_client_->wait_for_action_server()) {
-        RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
         rclcpp::shutdown();
     }
 
@@ -534,15 +593,20 @@ void  ChatActionServer::chestStatic( bool flag ) {
     send_goal_options.goal_response_callback =
         std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
 
-    send_goal_options.feedback_callback =
-        std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+    //send_goal_options.feedback_callback =
+    //    std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
 
     send_goal_options.result_callback =
         std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
 
-    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+    RCLCPP_INFO(this->get_logger(), "ledsPlay chestStatic Sending goal:" );
 
-    this->leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    auto goal_handle_future = this->leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    RCLCPP_INFO(this->get_logger(), "ledsPlay chestStatic goal sent: %d", flag);
+    // synchronous
+    //auto goal_handle = goal_handle_future.get();
+    //auto result_future = leds_play_act_client_->async_get_result(goal_handle);
+    //auto result = result_future.get();
 
 }
 
@@ -550,7 +614,7 @@ void  ChatActionServer::headStatic(bool flag) {
     using namespace std::placeholders;
 
     if (!this->leds_play_act_client_->wait_for_action_server()) {
-        RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
         rclcpp::shutdown();
     }
 
@@ -569,15 +633,19 @@ void  ChatActionServer::headStatic(bool flag) {
     send_goal_options.goal_response_callback =
         std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
 
-    send_goal_options.feedback_callback =
-        std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+    //send_goal_options.feedback_callback =
+    //    std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
 
     send_goal_options.result_callback =
         std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
 
-    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
 
-    this->leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    auto goal_handle_future = this->leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    RCLCPP_INFO(this->get_logger(), "ledsPlay headStatic goal sent: " );
+    // synchronous
+    //auto goal_handle = goal_handle_future.get();
+    //auto result_future = leds_play_act_client_->async_get_result(goal_handle);
+    //auto result = result_future.get();
 
 }
 
@@ -585,7 +653,7 @@ void  ChatActionServer::earsStatic(bool flag) {
     using namespace std::placeholders;
 
     if (!this->leds_play_act_client_->wait_for_action_server()) {
-        RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
         rclcpp::shutdown();
     }
 
@@ -605,15 +673,22 @@ void  ChatActionServer::earsStatic(bool flag) {
     send_goal_options.goal_response_callback =
         std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
 
-    send_goal_options.feedback_callback =
-        std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+    //send_goal_options.feedback_callback =
+    //    std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
 
     send_goal_options.result_callback =
         std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
 
-    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+    RCLCPP_INFO(this->get_logger(), "ledsPlay earsStatic Sending goal:" );
 
     auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+    RCLCPP_INFO(this->get_logger(), "ledsPlay earsStatic goal sent: %d", flag);
+
+
+    // synchronous
+    //auto goal_handle = goal_handle_future.get();
+    //auto result_future = leds_play_act_client_->async_get_result(goal_handle);
+    //auto result = result_future.get();
 
 }
 
@@ -621,7 +696,7 @@ void ChatActionServer::headLoop( bool flag )  {
     using namespace std::placeholders;
 
     if (!this->leds_play_act_client_->wait_for_action_server()) {
-        RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+        RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
         rclcpp::shutdown();
     }
 
@@ -640,62 +715,69 @@ void ChatActionServer::headLoop( bool flag )  {
         send_goal_options.goal_response_callback =
             std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
 
-        send_goal_options.feedback_callback =
-            std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+    //    send_goal_options.feedback_callback =
+    //        std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
 
         send_goal_options.result_callback =
             std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
 
-        RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+        RCLCPP_INFO(this->get_logger(), "ledsPlay headLoop Sending goal:" );
 
         auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
         head_goal_handle_ = goal_handle_future.get();
         //head_goal_handle_ = client_ptr_->async_send_goal(goal_msg, send_goal_options);
+        RCLCPP_INFO(this->get_logger(), "ledsPlay headLoop gets goal handle:" );
     } else {
         //rclcpp_action::ClientGoalHandle<hri_interfaces::action::LedsPlay>::SharedPtr handle = head_goal_handle_.get();
         //auto cancel_result_future = client_ptr_->async_cancel_goal(handle);
         auto cancel_result_future = leds_play_act_client_->async_cancel_goal(head_goal_handle_);
+        auto cancel_result = cancel_result_future.get(); //wait
+        RCLCPP_INFO(this->get_logger(), "ledsPlay headLoop cancel gets result");
+
         this->headStatic(false);
     }
 }
 
 void ChatActionServer::earsLoop(bool flag)  {
-  using namespace std::placeholders;
+    using namespace std::placeholders;
 
-  if (flag) {
-    if (!this->leds_play_act_client_->wait_for_action_server()) {
-      RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
-      rclcpp::shutdown();
+    if (flag) {
+        if (!this->leds_play_act_client_->wait_for_action_server()) {
+            RCLCPP_ERROR(this->get_logger(), "ledsPlay Action server not available after waiting");
+            rclcpp::shutdown();
+        }
+
+        auto goal_msg = hri_interfaces::action::LedsPlay::Goal();
+
+        goal_msg.leds = {hri_interfaces::msg::LedIndexes::REAR, hri_interfaces::msg::LedIndexes::LEAR};
+        goal_msg.mode = hri_interfaces::msg::LedModes::LOOP;
+        for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
+            goal_msg.intensities[i] = 1.0;
+        }
+        goal_msg.frequency = 10.0;
+
+        auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SendGoalOptions();
+
+        send_goal_options.goal_response_callback =
+            std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
+
+        //send_goal_options.feedback_callback =
+        //    std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
+
+        send_goal_options.result_callback =
+            std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
+
+        RCLCPP_INFO(this->get_logger(), "ledsPlay earsLoop Sending goal:" );
+
+        auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
+        ears_goal_handle_ = goal_handle_future.get();
+        RCLCPP_INFO(this->get_logger(), "ledsPlay earsLoop gets goal handle:" );
+    } else {
+        auto cancel_result_future = leds_play_act_client_->async_cancel_goal(ears_goal_handle_);
+        auto cancel_result = cancel_result_future.get(); //wait
+        RCLCPP_INFO(this->get_logger(), "ledsPlay earsLoop cancel gets result");
+        this->earsStatic(false);
     }
-
-    auto goal_msg = hri_interfaces::action::LedsPlay::Goal();
-
-    goal_msg.leds = {hri_interfaces::msg::LedIndexes::REAR, hri_interfaces::msg::LedIndexes::LEAR};
-    goal_msg.mode = hri_interfaces::msg::LedModes::LOOP;
-    for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEarLeds::NUM_LEDS; ++i) {
-      goal_msg.intensities[i] = 1.0;
-    }
-    goal_msg.frequency = 10.0;
-
-    auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::LedsPlay>::SendGoalOptions();
-
-    send_goal_options.goal_response_callback =
-      std::bind(&ChatActionServer::ledsPlayGoalResponseCallback, this, _1);
-
-    send_goal_options.feedback_callback =
-      std::bind(&ChatActionServer::ledsPlayFeedbackCallback, this, _1, _2);
-
-    send_goal_options.result_callback =
-      std::bind(&ChatActionServer::ledsPlayResultCallback, this, _1);
-
-    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
-
-    auto goal_handle_future = leds_play_act_client_->async_send_goal(goal_msg, send_goal_options);
-    ears_goal_handle_ = goal_handle_future.get();
-  } else {
-    auto cancel_result_future = leds_play_act_client_->async_cancel_goal(ears_goal_handle_);
-    this->earsStatic(false);
-  }
 }
 
 /*############## JOINTS PLAY ACTION CLIENT ##############*/
@@ -703,9 +785,9 @@ void ChatActionServer::earsLoop(bool flag)  {
 void ChatActionServer::jointsPlayGoalResponseCallback(
     const rclcpp_action::ClientGoalHandle<hri_interfaces::action::JointsPlay>::SharedPtr & goal_handle) {
     if (!goal_handle) {
-        RCLCPP_ERROR(this->get_logger(), "Goal was rejected by server");
+        RCLCPP_ERROR(this->get_logger(), "jointsPlay goal was rejected by server");
     } else {
-        RCLCPP_INFO(this->get_logger(), "Goal accepted by server, waiting for result");
+        RCLCPP_INFO(this->get_logger(), "jointsPlay goal accepted by server, waiting for result");
     }
 }
 
@@ -724,13 +806,13 @@ void ChatActionServer::jointsPlayResultCallback(
     case rclcpp_action::ResultCode::SUCCEEDED:
         break;
     case rclcpp_action::ResultCode::ABORTED:
-        RCLCPP_ERROR(this->get_logger(), "Goal was aborted");
+        RCLCPP_ERROR(this->get_logger(), " jointsPlay Goal was aborted");
         return;
     case rclcpp_action::ResultCode::CANCELED:
-        RCLCPP_ERROR(this->get_logger(), "Goal was canceled");
+        RCLCPP_ERROR(this->get_logger(), "jointsPlay Goal was canceled");
         return;
     default:
-        RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+        RCLCPP_ERROR(this->get_logger(), "jointsPlay Unknown result code");
         return;
     }
 

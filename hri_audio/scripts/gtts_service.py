@@ -42,7 +42,10 @@ class GTTSService(Node):
         self.client = texttospeech.TextToSpeechClient()
 
         self.voice = texttospeech.VoiceSelectionParams(
-            language_code="IT-IT", name="it-IT-Neural2-C"  # A female, C male
+            #language_code="IT-IT", name="it-IT-Neural2-C"  # A female, C male
+            #language_code="en-US", name="en-US-Neural2-D"  # C female
+            #language_code="en-US", name="en-US-Studio-Q"  # male, O female
+            language_code="en-US", name="en-US-Journey-D"  
         )
 
         # Select the type of audio file you want returned
@@ -78,7 +81,7 @@ class GTTSService(Node):
                 out.write(response.audio_content)
                 self.get_logger().info('Audio content written to file "output.ogg"')
 
-            self.get_logger().info("Playing output.ogg at full volumeEE.")
+            self.get_logger().info("Playing output.ogg at full volume.")
             
             self.sound_handle_b.playWave("/tmp/output.ogg")
 

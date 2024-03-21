@@ -33,7 +33,7 @@ CHUNK = int(RATE / 10)  # 100ms
 class GSTTService(Node):
     def __init__(self):
         super().__init__("gstt_srv_node")
-        language_code = "it-IT"
+        language_code = "en-US" # a BCP-47 language tag
         self.client = speech.SpeechClient()
         self.config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -53,7 +53,7 @@ class GSTTService(Node):
     
     def gstt_callback(self, sRequest, sResponse):
         # response.sum = request.a + request.b
-        self.get_logger().info('GSTTService Incoming request')
+        self.get_logger().debug('GSTTService Incoming request')
         if sRequest.data == True:
 
             with MicrophoneStream(RATE, CHUNK) as stream:
@@ -62,12 +62,14 @@ class GSTTService(Node):
                     speech.StreamingRecognizeRequest(audio_content=content)
                     for content in audio_generator
                 )
+                self.get_logger().debug('requests created')
                 responses = self.client.streaming_recognize(self.streaming_config, requests)
+                self.get_logger().debug('responses created')
                 # Now, put the transcription responses to use.
                 #listen_print_loop(responses)
                 sResponse.success = True
                 sResponse.message = self.__retrieve_text(responses)
-                self.get_logger().info('GSTTService complete request')
+                self.get_logger().debug('GSTTService complete request')
                 return sResponse
         else:
             sResponse.data = False
@@ -90,6 +92,7 @@ class GSTTService(Node):
             final one, print a newline to preserve the finalized transcription.
             """
             num_chars_printed = 0
+
             for response in responses:
                 if not response.results:
                     continue
@@ -101,6 +104,8 @@ class GSTTService(Node):
                 if not result.alternatives:
                     continue
 
+                self.get_logger().info('alternative present')    
+                    
                 # Display the transcription of the top alternative.
                 transcript = result.alternatives[0].transcript
 
@@ -109,13 +114,21 @@ class GSTTService(Node):
                 #
                 # If the previous result was longer than this one, we need to print
                 # some extra spaces to overwrite the previous result
-                overwrite_chars = " " * (num_chars_printed - len(transcript))
+                #overwrite_chars = " " * (num_chars_printed - len(transcript))
+                
 
-                if result.is_final:
+                if not result.is_final:
+                    #sys.stdout.write(transcript + overwrite_chars + "\r")
+                    #self.get_logger().info(transcript + overwrite_chars + "\r")
+
+                    num_chars_printed = len(transcript)
+
+                else:
+                    self.get_logger().info(transcript)
+                    num_chars_printed = 0
+
                     return transcript    
     
-
-
 
 def main():
     rclpy.init()
