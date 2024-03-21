@@ -192,7 +192,7 @@ void ChatActionServer::handleAccepted(
 void ChatActionServer::execute(
     const std::shared_ptr<rclcpp_action::ServerGoalHandle<hri_interfaces::action::ChatPlay>> goal_handle) {
     using namespace std::placeholders;
-\
+    
     RCLCPP_INFO(this->get_logger(), "Executing chat goal");
 
     auto chat_goal = goal_handle->get_goal();
