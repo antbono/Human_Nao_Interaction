@@ -52,11 +52,13 @@ class GSTTService(Node):
             config=self.config,
             single_utterance=True,
             #interim_results=True
-            enable_voice_activity_events=True, 
-            voice_activity_timeout=10,
+            #enable_voice_activity_events=True, 
+            #voice_activity_timeout=True,
             #speech_end_timeout=10
         )
         self.srv = self.create_service(SetBool, "gstt_service", self.gstt_callback)
+
+        #self.stream = MicrophoneStream(RATE, CHUNK)
 
         self.get_logger().info('GSTTService initialized')
 
@@ -68,68 +70,74 @@ class GSTTService(Node):
 
         if sRequest.data == True:
 
-            with MicrophoneStream(RATE, CHUNK) as stream:
+            try:
+                sResponse.success=False
+
+                stream = MicrophoneStream(RATE, CHUNK)
+                stream = stream.__enter__()
                 audio_generator = stream.generator()
                 requests = (
                     speech.StreamingRecognizeRequest(audio_content=content)
                     for content in audio_generator
                 )
+
                 self.get_logger().debug('requests created')
                 responses_iterator = self.client.streaming_recognize(self.streaming_config, requests)
                 self.get_logger().debug('responses created')
-                # Now, put the transcription responses to use.
-                #listen_print_loop(responses)
-                #sResponse.message = self.__retrieve_text(responses)
-                #sResponse.success = True
                 
                 start_time = time.time()
                 self.get_logger().info('start_time')
                 timeout_seconds = 30
                 final_transcript_received = False
 
-                try:
-                    for response in responses_iterator:         #BLOCKING!
-                        self.get_logger().info('responses loop')
-                        if time.time() - start_time > timeout_seconds:
-                            self.get_logger().error("Timeout: No final result after %d seconds." % timeout_seconds)
-                            sResponse.success = False
-                            sResponse.message = "timeout"
-                            break  # Exit the loop if we've reached the timeout without a final result
+                for response in responses_iterator:         #BLOCKING!
+                    self.get_logger().info('responses loop')
+                    if time.time() - start_time > timeout_seconds:
+                        self.get_logger().error("Timeout: No final result after %d seconds." % timeout_seconds)
+                        sResponse.success = False
+                        sResponse.message = "timeout"
+                        break  # Exit the loop if we've reached the timeout without a final result
 
-                        # Check if there are any results in this response
-                        if not response.results:
-                            continue
+                    # Check if there are any results in this response
+                    if not response.results:
+                        continue
 
-                        # The first result is the most relevant for single utterance mode
-                        result = response.results[0]
+                    # The first result is the most relevant for single utterance mode
+                    result = response.results[0]
 
-                        # Check if the result is final
-                        if result.is_final:
-                            final_transcript_received = True
-                            # Extract the top alternative of the final result
-                            top_transcript = result.alternatives[0].transcript
-                            self.get_logger().info(f"Final transcript: {top_transcript}")
-                            sResponse.success = True
-                            sResponse.message = top_transcript
-                            break  # Exit the loop since we've received a final transcript
+                    # Check if the result is final
+                    if result.is_final:
+                        final_transcript_received = True
+                        # Extract the top alternative of the final result
+                        top_transcript = result.alternatives[0].transcript
+                        self.get_logger().info(f"Final transcript: {top_transcript}")
+                        sResponse.success = True
+                        sResponse.message = top_transcript
+                        break  # Exit the loop since we've received a final transcript
 
                     if not final_transcript_received:
                         self.get_logger().error("No final transcript received.")
                         sResponse.success = False
-
-                except Exception as e:
-                    self.get_logger().error(f"Error during speech recognition: {e}")
-                    sResponse.success = False
-                    return sResponse
+                        sResponse.message = "No final transcript received."
 
                 self.get_logger().debug('GSTTService complete request')
-            
                 return sResponse
 
-            sResponse.success = False
-            sResponse.message = "No final result was obtained."
-            self.get_logger().info('No final result was obtained.')
-            return sResponse
+            except Exception as e:
+                self.get_logger().error(f"Error during speech recognition: {e}")
+                sResponse.success = False
+                return sResponse
+
+            finally:
+                stream.__exit__(stream, stream, stream)
+
+
+
+            #After stream close
+            #sResponse.success = False
+            #sResponse.message = "No final result was obtained."
+            #self.get_logger().info('No final result was obtained.')
+            #return sResponse
 
         else:
             sResponse.success = False

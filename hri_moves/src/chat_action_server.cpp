@@ -245,7 +245,7 @@ void ChatActionServer::execute(
         auto gstt_future = gstt_srv_client_->async_send_request(gstt_request);
         RCLCPP_INFO(this->get_logger(), "gstt request sent" );
         auto gstt_result = gstt_future.get();      // wait for the result
-        RCLCPP_INFO(this->get_logger(), "gstt gets result" );
+        RCLCPP_INFO(this->get_logger(), "gstt gets result %d", gstt_result.get()->success );
 
         this->earsLoop(false);
         bool stt_ok = gstt_result.get()->success;
