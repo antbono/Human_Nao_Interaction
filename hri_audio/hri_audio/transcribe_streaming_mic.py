@@ -1,21 +1,49 @@
-from __future__ import division
+# Copyright 2017 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+"""Google Cloud Speech API sample application using the streaming API.
+
+NOTE: This module requires the additional dependency `pyaudio`. To install
+using pip:
+
+    pip install pyaudio
+
+Example usage:
+    python transcribe_streaming_mic.py
+"""
+
+# [START speech_transcribe_streaming_mic]
+
+import queue
 import re
 import sys
 
 from google.cloud import speech
 
 import pyaudio
-from six.moves import queue
 
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
+#STREAMING_LIMIT = 60000  # 1 minute
 
-class MicrophoneStream(object):
+
+class MicrophoneStream:
     """Opens a recording stream as a generator yielding the audio chunks."""
 
-    def __init__(self, rate, chunk):
+    def __init__(self: object, rate: int = RATE, chunk: int = CHUNK) -> None:
+        """The audio -- and generator -- is guaranteed to be on the main thread."""
         self._rate = rate
         self._chunk = chunk
 
@@ -23,7 +51,7 @@ class MicrophoneStream(object):
         self._buff = queue.Queue()
         self.closed = True
 
-    def __enter__(self):
+    def __enter__(self: object) -> object:
         self._audio_interface = pyaudio.PyAudio()
         self._audio_stream = self._audio_interface.open(
             format=pyaudio.paInt16,
@@ -43,7 +71,13 @@ class MicrophoneStream(object):
 
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(
+        self: object,
+        type: object,
+        value: object,
+        traceback: object,
+    ) -> None:
+        """Closes the stream, regardless of whether the connection was lost or not."""
         self._audio_stream.stop_stream()
         self._audio_stream.close()
         self.closed = True
@@ -52,12 +86,36 @@ class MicrophoneStream(object):
         self._buff.put(None)
         self._audio_interface.terminate()
 
-    def _fill_buffer(self, in_data, frame_count, time_info, status_flags):
-        """Continuously collect data from the audio stream, into the buffer."""
+    def _fill_buffer(
+        self: object,
+        in_data: object,
+        frame_count: int,
+        time_info: object,
+        status_flags: object,
+    ) -> object:
+        """Continuously collect data from the audio stream, into the buffer.
+
+        Args:
+            in_data: The audio data as a bytes object
+            frame_count: The number of frames captured
+            time_info: The time information
+            status_flags: The status flags
+
+        Returns:
+            The audio data as a bytes object
+        """
         self._buff.put(in_data)
         return None, pyaudio.paContinue
 
-    def generator(self):
+    def generator(self: object) -> object:
+        """Generates audio chunks from the stream of audio data in chunks.
+
+        Args:
+            self: The MicrophoneStream object
+
+        Returns:
+            A generator that outputs audio chunks.
+        """
         while not self.closed:
             # Use a blocking get() to ensure there's at least one chunk of
             # data, and stop iteration if the chunk is None, indicating the
@@ -79,7 +137,8 @@ class MicrophoneStream(object):
 
             yield b"".join(data)
 
-def listen_print_loop(responses):
+
+def listen_print_loop(responses: object) -> str:
     """Iterates through server responses and prints them.
 
     The responses passed is a generator that will block until a response
@@ -93,6 +152,12 @@ def listen_print_loop(responses):
     response is an interim one, print a line feed at the end of it, to allow
     the next result to overwrite it, until the response is a final one. For the
     final one, print a newline to preserve the finalized transcription.
+
+    Args:
+        responses: List of server responses
+
+    Returns:
+        The transcribed text.
     """
     num_chars_printed = 0
     for response in responses:
@@ -133,7 +198,11 @@ def listen_print_loop(responses):
 
             num_chars_printed = 0
 
-def main():
+    return transcript
+
+
+def main() -> None:
+    """Transcribe speech from audio file."""
     # See http://g.co/cloud/speech/docs/languages
     # for a list of supported languages.
     language_code = "en-US"  # a BCP-47 language tag
@@ -146,8 +215,7 @@ def main():
     )
 
     streaming_config = speech.StreamingRecognitionConfig(
-        #config=config, interim_results=True
-        config=config, enable_voice_activity_events=True, voice_activity_timeout=True, speech_end_timeout=20
+        config=config, interim_results=True
     )
 
     with MicrophoneStream(RATE, CHUNK) as stream:
@@ -155,12 +223,14 @@ def main():
         requests = (
             speech.StreamingRecognizeRequest(audio_content=content)
             for content in audio_generator
-        )
+        )   
 
         responses = client.streaming_recognize(streaming_config, requests)
 
         # Now, put the transcription responses to use.
         listen_print_loop(responses)
 
+
 if __name__ == "__main__":
     main()
+# [END speech_transcribe_streaming_mic]

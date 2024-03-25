@@ -236,162 +236,121 @@ void ChatActionServer::execute(
         RCLCPP_INFO(this->get_logger(), "Ready to listen");
 
         //ears static
-        this->earsStatic(false);
+        //this->earsStatic(false);
 
         this->earsLoop(true);
 
         //TTS
+        RCLCPP_WARN(this->get_logger(), "sending gstt request" );
         auto gstt_future = gstt_srv_client_->async_send_request(gstt_request);
-        RCLCPP_DEBUG(this->get_logger(), "gstt request sent" );
+        RCLCPP_INFO(this->get_logger(), "gstt request sent" );
         auto gstt_result = gstt_future.get();      // wait for the result
-        RCLCPP_DEBUG(this->get_logger(), "gstt gets result" );
+        RCLCPP_INFO(this->get_logger(), "gstt gets result" );
 
         this->earsLoop(false);
-        recognized_speach = gstt_result.get()->message;
-        RCLCPP_INFO(this->get_logger(), ("Recognized speech: " + recognized_speach).c_str());
+        bool stt_ok = gstt_result.get()->success;
 
-
-        /*
-        auto gstt_result = gstt_srv_client_->async_send_request(gstt_request);
-        // Wait for the result.
-        if ( rclcpp::spin_until_future_complete(this->get_node_base_interface(), gstt_result) ==
-            rclcpp::FutureReturnCode::SUCCESS){
-        //if ( rclcpp::spin_until_future_complete(this, gstt_result) == rclcpp::FutureReturnCode::SUCCESS ) {
+        if (stt_ok) {
             recognized_speach = gstt_result.get()->message;
-            RCLCPP_INFO(this->get_logger(), ("Recognized speach: " + recognized_speach).c_str());
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
-            return;
-        }
-        */
+            RCLCPP_INFO(this->get_logger(), ("Recognized speech: " + recognized_speach).c_str());
 
 
+            this->headLoop(true);
 
-        //recognized_speach = gstt_srv_client_->sendSyncReq();
+            // chatgpt service
 
-        this->headLoop(true);
+            auto chat_request = std::make_shared<hri_interfaces::srv::Chat::Request>();
+            chat_request->question = recognized_speach;
+            auto chat_future = chat_srv_client_->async_send_request(chat_request);
+            auto chat_result = chat_future.get(); // wait for the result
 
+            this->headLoop(false);
 
-
-
-        // chatgpt service
-        //chatgpt_answer = chat_srv_client_->sendSyncReq(recognized_speach);
-
-        auto chat_request = std::make_shared<hri_interfaces::srv::Chat::Request>();
-        chat_request->question = recognized_speach;
-        auto chat_future = chat_srv_client_->async_send_request(chat_request);
-        auto chat_result = chat_future.get(); // wait for the result
-        this->headLoop(false);
-        chatgpt_answer = chat_result.get()->answer;
-        RCLCPP_INFO(this->get_logger(), ("chatGPT answer: " + chatgpt_answer).c_str());
-
-        /*
-        auto chat_request = std::make_shared<hri_interfaces::srv::Chat::Request>();
-        chat_request->question = recognized_speach;
-        auto chat_result = chat_srv_client_->async_send_request(chat_request);
-
-        RCLCPP_DEBUG(this->get_logger(), "wait chatGPT answer..");
-        // Wait for the result.
-        if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), chat_result) ==
-                rclcpp::FutureReturnCode::SUCCESS) {
             chatgpt_answer = chat_result.get()->answer;
             RCLCPP_INFO(this->get_logger(), ("chatGPT answer: " + chatgpt_answer).c_str());
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to call chat_service");
-            return;
-        }
-        */
 
 
-        // text and timing analysis of the answer
-        num_words = 0;
-        words.clear();
-        key_words.clear();
-        key_words_time.clear();
-        std::istringstream iss_ans(chatgpt_answer);
-        first_word = true;
+            // text and timing analysis of the answer
+            num_words = 0;
+            words.clear();
+            key_words.clear();
+            key_words_time.clear();
+            std::istringstream iss_ans(chatgpt_answer);
+            first_word = true;
 
-        while (iss_ans >> word) {
-            std::string alphaAndApostropheOnly;
-            /*
-            for (char ch : word) {
-                if (std::isalpha(ch) || ch == '\'') { // Include apostrophes
-                    alphaAndApostropheOnly += std::tolower(ch);
+            while (iss_ans >> word) {
+                std::string alphaAndApostropheOnly;
+
+                for (auto it = word.begin(); it != word.end(); ++it) {
+                    char ch = *it;
+                    if (std::isalpha(ch) || ch == '\'') { // Include apostrophes
+                        alphaAndApostropheOnly += std::tolower(ch);
+                    }
                 }
-            }
-            */
 
-            for (auto it = word.begin(); it != word.end(); ++it) {
-                char ch = *it;
-                if (std::isalpha(ch) || ch == '\'') { // Include apostrophes
-                    alphaAndApostropheOnly += std::tolower(ch);
+                if (!alphaAndApostropheOnly.empty()) {
+                    words.push_back(alphaAndApostropheOnly);
                 }
             }
 
-
-            if (!alphaAndApostropheOnly.empty()) {
-                words.push_back(alphaAndApostropheOnly);
+            std::stringstream ss0;
+            for (const auto& s : words) {
+                ss0 << s << "; ";
             }
-        }
 
-        std::stringstream ss0;
-        for (const auto& s : words) {
-            ss0 << s << ":: ";
-        }
-
-        //std::stringstream ss0;
-        //for (auto it = words.begin(); it != words.end(); it++)    {
-        //    if (it != words.begin()) {
-        //        ss0 << "; ";
-        //    }
-        //    ss0 << *it;
-        //}
-
-        RCLCPP_INFO_STREAM(this->get_logger(), "words: " << ss0.str()  );
-        for (std::string w : words) {
-            num_words += 1;
-            std::transform(w.begin(), w.end(), w.begin(),
-            [](unsigned char c) { return std::tolower(c); });
-            if (moves_map_.find(w) != moves_map_.end()) {
-                key_words.push_back(w);
-                if (num_words <= kForwardParam_ && first_word) {
-                    key_words_time.push_back(0.1);
-                    first_word = false;
-                } else if (num_words <= kForwardParam_ && !first_word) {
-                    key_words_time.push_back(num_words * kSecPerWord_);
-                } else {
-                    key_words_time.push_back((num_words - kForwardParam_)*kSecPerWord_);
+            RCLCPP_INFO_STREAM(this->get_logger(), "words: " << ss0.str()  );
+            for (std::string w : words) {
+                num_words += 1;
+                std::transform(w.begin(), w.end(), w.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+                if (moves_map_.find(w) != moves_map_.end()) {
+                    key_words.push_back(w);
+                    if (num_words <= kForwardParam_ && first_word) {
+                        key_words_time.push_back(0.1);
+                        first_word = false;
+                    } else if (num_words <= kForwardParam_ && !first_word) {
+                        key_words_time.push_back(num_words * kSecPerWord_);
+                    } else {
+                        key_words_time.push_back((num_words - kForwardParam_)*kSecPerWord_);
+                    }
                 }
+
             }
 
-        }
-
-        std::stringstream ss1;
-        for (auto it = key_words.begin(); it != key_words.end(); it++)    {
-            if (it != key_words.begin()) {
-                ss1 << " ";
+            std::stringstream ss1;
+            for (auto it = key_words.begin(); it != key_words.end(); it++)    {
+                if (it != key_words.begin()) {
+                    ss1 << " ";
+                }
+                ss1 << *it;
             }
-            ss1 << *it;
-        }
-        RCLCPP_INFO_STREAM(this->get_logger(), "key_words: " << ss1.str()  );
+            RCLCPP_INFO_STREAM(this->get_logger(), "key_words: " << ss1.str()  );
 
-        std::stringstream ss2;
-        for (auto it = key_words_time.begin(); it != key_words_time.end(); it++)    {
-            if (it != key_words_time.begin()) {
-                ss2 << " ";
+            std::stringstream ss2;
+            for (auto it = key_words_time.begin(); it != key_words_time.end(); it++)    {
+                if (it != key_words_time.begin()) {
+                    ss2 << " ";
+                }
+                ss2 << *it;
             }
-            ss2 << *it;
-        }
-        RCLCPP_INFO_STREAM(this->get_logger(), "key_words_time: " << ss2.str()  );
+            RCLCPP_INFO_STREAM(this->get_logger(), "key_words_time: " << ss2.str()  );
+
+        }//stt ok
 
 
         // speaking TTS
+
         this->earsStatic(true);
 
         //gtts_srv_client_->sendSyncReq(chatgpt_answer);
-
         auto gtts_request = std::make_shared<hri_interfaces::srv::TextToSpeech::Request>();
-        gtts_request->text = chatgpt_answer;
+
+        if (stt_ok) {
+            gtts_request->text = chatgpt_answer;
+        } else {
+            gtts_request->text = "I am sorry but I can't uderstand";
+        }
+
         auto gtts_future = gtts_srv_client_->async_send_request(gtts_request);
 
         auto gtts_result = gtts_future.get(); // Wait for the result.
@@ -402,98 +361,48 @@ void ChatActionServer::execute(
             return;
         }
 
-        /*
-        auto gtts_request = std::make_shared<hri_interfaces::srv::TextToSpeech::Request>();
-        gtts_request->text = chatgpt_answer;
-        auto gtts_result = gtts_srv_client_->async_send_request(gtts_request);
-        // Wait for the result.
-        if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), gtts_result) ==
-                rclcpp::FutureReturnCode::SUCCESS) {
-            RCLCPP_INFO(this->get_logger(), "tts request completed: %d", gtts_result.get()->success);
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Failed to call gstt_service");
-            return;
-        }
-        */
-        //play moves
-        t_start = this->now().seconds();
-        //rclcpp::sleep_for(std::chrono::milliseconds(50));
+        if (stt_ok) {
+
+            //play moves
+            t_start = this->now().seconds();
+            //rclcpp::sleep_for(std::chrono::milliseconds(50));
 
 
-        for (unsigned i = 0; i < key_words.size(); ++i) {
+            for (unsigned i = 0; i < key_words.size(); ++i) {
 
-            t_key_word = key_words_time[i];
-            t_word = t_key_word + t_start;
-            t_cur = this->now().seconds();
+                t_key_word = key_words_time[i];
+                t_word = t_key_word + t_start;
+                t_cur = this->now().seconds();
 
-            if (t_cur < t_word) {
-                //wait
-                t_sleep = t_word - t_cur;
-                rclcpp::sleep_for(std::chrono::nanoseconds(static_cast<uint64_t>(t_sleep * 1e9)));
+                if (t_cur < t_word) {
+                    //wait
+                    t_sleep = t_word - t_cur;
+                    rclcpp::sleep_for(std::chrono::nanoseconds(static_cast<uint64_t>(t_sleep * 1e9)));
 
-                //execute move
-                action_path = moves_map_[key_words[i]];
+                    //execute move
+                    action_path = moves_map_[key_words[i]];
 
-                auto goal_msg = hri_interfaces::action::JointsPlay::Goal();
-                goal_msg.path = action_path;
+                    auto goal_msg = hri_interfaces::action::JointsPlay::Goal();
+                    goal_msg.path = action_path;
 
-                auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SendGoalOptions();
+                    auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SendGoalOptions();
 
-                send_goal_options.goal_response_callback =
-                    std::bind(&ChatActionServer::jointsPlayGoalResponseCallback, this, std::placeholders::_1);
-                //send_goal_options.feedback_callback =
-                //    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
-                send_goal_options.result_callback =
-                    std::bind(&ChatActionServer::jointsPlayResultCallback, this, std::placeholders::_1);
+                    send_goal_options.goal_response_callback =
+                        std::bind(&ChatActionServer::jointsPlayGoalResponseCallback, this, std::placeholders::_1);
+                    //send_goal_options.feedback_callback =
+                    //    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
+                    send_goal_options.result_callback =
+                        std::bind(&ChatActionServer::jointsPlayResultCallback, this, std::placeholders::_1);
 
-                RCLCPP_DEBUG(this->get_logger(), (" jointsPlay Sending goal: " + action_path).c_str() );
+                    RCLCPP_DEBUG(this->get_logger(), (" jointsPlay Sending goal: " + action_path).c_str() );
 
-                this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
+                    this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
+
+                }
 
             }
 
         }
-
-
-        /*
-        for (unsigned i = 0; i < key_words.size(); ++i) {
-
-            t_key_word = key_words_time[i];
-            t_word = t_key_word + t_start;
-            t_cur = this->now().seconds();
-
-            if (t_cur < t_word) {
-                //wait
-                t_sleep = t_word - t_cur;
-                rclcpp::sleep_for(std::chrono::nanoseconds(static_cast<uint64_t>(t_sleep * 1e9)));
-
-                //execute move
-                action_path = moves_map_[key_words[i]];
-
-                RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
-                joints_play_client_->sendAsyncGoal(action_path);
-
-                /*
-                auto goal_msg = hri_interfaces::action::JointsPlay::Goal();
-                goal_msg.path = action_path;
-
-                auto send_goal_options = rclcpp_action::Client<hri_interfaces::action::JointsPlay>::SendGoalOptions();
-
-                send_goal_options.goal_response_callback =
-                    std::bind(&ChatActionServer::jointsPlayGoalRe sponseCallback, this, std::placeholders::_1);
-                send_goal_options.feedback_callback =
-                    std::bind(&ChatActionServer::jointsPlayFeedbackCallback, this, std::placeholders::_1, std::placeholders::_2);
-                send_goal_options.result_callback =
-                    std::bind(&ChatActionServer::jointsPlayResultCallback, this, std::placeholders::_1);
-
-                RCLCPP_INFO(this->get_logger(), ("Sending goal: " + action_path).c_str() );
-
-                this->joints_act_client_->async_send_goal(goal_msg, send_goal_options);
-                end comment!
-
-            }
-
-        }*/
 
         //user input
         std::cout << "Press after your listening is finished." << std::endl;

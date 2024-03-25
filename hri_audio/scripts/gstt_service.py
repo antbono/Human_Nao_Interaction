@@ -15,10 +15,16 @@
 # limitations under the License.
 
 from google.cloud import speech
+#from google.cloud import speech_v1p1beta1 as speech
+from google.rpc import code_pb2
+from google.api_core.exceptions import GoogleAPICallError
+from google.api_core.exceptions import DeadlineExceeded
+
 import rclpy
+import time
 from rclpy.node import Node
 from std_msgs.msg import String
-from hri_audio.microphone_stream import *
+from hri_audio.microphone_stream import MicrophoneStream
 from std_srvs.srv import SetBool
 
 # bool data # e.g. for hardware enabling / disabling
@@ -39,21 +45,27 @@ class GSTTService(Node):
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=RATE,
             language_code=language_code,
+            model="latest_short"
         )
 
         self.streaming_config = speech.StreamingRecognitionConfig(
             config=self.config,
-            single_utterance=True
+            single_utterance=True,
             #interim_results=True
-            # config=config, enable_voice_activity_events=True, voice_activity_timeout=True, speech_end_timeout=4
+            enable_voice_activity_events=True, 
+            voice_activity_timeout=10,
+            #speech_end_timeout=10
         )
         self.srv = self.create_service(SetBool, "gstt_service", self.gstt_callback)
+
         self.get_logger().info('GSTTService initialized')
-        
+
+
     
     def gstt_callback(self, sRequest, sResponse):
-        # response.sum = request.a + request.b
+        
         self.get_logger().debug('GSTTService Incoming request')
+
         if sRequest.data == True:
 
             with MicrophoneStream(RATE, CHUNK) as stream:
@@ -63,16 +75,65 @@ class GSTTService(Node):
                     for content in audio_generator
                 )
                 self.get_logger().debug('requests created')
-                responses = self.client.streaming_recognize(self.streaming_config, requests)
+                responses_iterator = self.client.streaming_recognize(self.streaming_config, requests)
                 self.get_logger().debug('responses created')
                 # Now, put the transcription responses to use.
                 #listen_print_loop(responses)
-                sResponse.success = True
-                sResponse.message = self.__retrieve_text(responses)
+                #sResponse.message = self.__retrieve_text(responses)
+                #sResponse.success = True
+                
+                start_time = time.time()
+                self.get_logger().info('start_time')
+                timeout_seconds = 30
+                final_transcript_received = False
+
+                try:
+                    for response in responses_iterator:         #BLOCKING!
+                        self.get_logger().info('responses loop')
+                        if time.time() - start_time > timeout_seconds:
+                            self.get_logger().error("Timeout: No final result after %d seconds." % timeout_seconds)
+                            sResponse.success = False
+                            sResponse.message = "timeout"
+                            break  # Exit the loop if we've reached the timeout without a final result
+
+                        # Check if there are any results in this response
+                        if not response.results:
+                            continue
+
+                        # The first result is the most relevant for single utterance mode
+                        result = response.results[0]
+
+                        # Check if the result is final
+                        if result.is_final:
+                            final_transcript_received = True
+                            # Extract the top alternative of the final result
+                            top_transcript = result.alternatives[0].transcript
+                            self.get_logger().info(f"Final transcript: {top_transcript}")
+                            sResponse.success = True
+                            sResponse.message = top_transcript
+                            break  # Exit the loop since we've received a final transcript
+
+                    if not final_transcript_received:
+                        self.get_logger().error("No final transcript received.")
+                        sResponse.success = False
+
+                except Exception as e:
+                    self.get_logger().error(f"Error during speech recognition: {e}")
+                    sResponse.success = False
+                    return sResponse
+
                 self.get_logger().debug('GSTTService complete request')
+            
                 return sResponse
+
+            sResponse.success = False
+            sResponse.message = "No final result was obtained."
+            self.get_logger().info('No final result was obtained.')
+            return sResponse
+
         else:
-            sResponse.data = False
+            sResponse.success = False
+            sResponse.message = "The service must be called with 'True' to start recognition."
             return sResponse
             
 
@@ -91,43 +152,63 @@ class GSTTService(Node):
             the next result to overwrite it, until the response is a final one. For the
             final one, print a newline to preserve the finalized transcription.
             """
-            num_chars_printed = 0
 
-            for response in responses:
-                if not response.results:
-                    continue
+            num_loop = 0
+            num_not_results = 0
+            num_not_alternatives = 0
+            num_not_final = 0
 
-                # The `results` list is consecutive. For streaming, we only care about
-                # the first result being considered, since once it's `is_final`, it
-                # moves on to considering the next utterance.
-                result = response.results[0]
-                if not result.alternatives:
-                    continue
+            try:
+                for response in responses:
+                    num_loop = num_loop + 1
+                    self.get_logger().info('num loop %d' % num_loop)
+                    if not response.results:
+                        num_not_results = num_not_results + 1
+                        self.get_logger().info('no results %d' % num_not_results)
+                        continue
 
-                self.get_logger().info('alternative present')    
+                    # The `results` list is consecutive. For streaming, we only care about
+                    # the first result being considered, since once it's `is_final`, it
+                    # moves on to considering the next utterance.
+                    self.get_logger().info('try a result')    
+                    result = response.results[0]
+                    if not result.alternatives:
+                        num_not_alternatives = num_not_alternatives + 1
+                        self.get_logger().debug('no alternative %d' % num_not_alternatives)
+                        continue
+
+                    self.get_logger().info('alternative present')    
+                        
+                    # Display the transcription of the top alternative.
+                    transcript = result.alternatives[0].transcript
+
+                    # Display interim results, but with a carriage return at the end of the
+                    # line, so subsequent lines will overwrite them.
+                    #
+                    # If the previous result was longer than this one, we need to print
+                    # some extra spaces to overwrite the previous result
+                    #overwrite_chars = " " * (num_chars_printed - len(transcript))
                     
-                # Display the transcription of the top alternative.
-                transcript = result.alternatives[0].transcript
 
-                # Display interim results, but with a carriage return at the end of the
-                # line, so subsequent lines will overwrite them.
-                #
-                # If the previous result was longer than this one, we need to print
-                # some extra spaces to overwrite the previous result
-                #overwrite_chars = " " * (num_chars_printed - len(transcript))
-                
+                    if not result.is_final:
+                        #sys.stdout.write(transcript + overwrite_chars + "\r")
+                        #self.get_logger().info(transcript + overwrite_chars + "\r")
+                        num_not_final = num_not_final + 1
+                        self.get_logger().info('not final %d' % num_not_final)
 
-                if not result.is_final:
-                    #sys.stdout.write(transcript + overwrite_chars + "\r")
-                    #self.get_logger().info(transcript + overwrite_chars + "\r")
+                    else:
+                        self.get_logger().info(transcript)
+                        num_chars_printed = 0
+                        return transcript
 
-                    num_chars_printed = len(transcript)
-
+            except GoogleAPICallError as e:
+                if e.code == code_pb2.PERMISSION_DENIED:
+                    self.get_logger().error("Permission denied error.")
+                elif e.code == code_pb2.NOT_FOUND:
+                    self.get_logger().error("Resource not found.")
                 else:
-                    self.get_logger().info(transcript)
-                    num_chars_printed = 0
-
-                    return transcript    
+                    self.get_logger().error(f"An error occurred: {e}")
+            return ""    
     
 
 def main():
