@@ -119,8 +119,8 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     moves_map_["little"] = "install/hri_moves/include/moves/little.txt";
     moves_map_["down"] = "install/hri_moves/include/moves/down.txt";
     moves_map_["up"] = "install/hri_moves/include/moves/up.txt";
-    moves_map_["right direction"] = "install/hri_moves/include/moves/right.txt";
-    moves_map_["left direction"] = "install/hri_moves/include/moves/left.txt";
+    moves_map_["right"] = "install/hri_moves/include/moves/right.txt";
+    moves_map_["left"] = "install/hri_moves/include/moves/left.txt";
     moves_map_["fear"] = "install/hri_moves/include/moves/fear.txt";
     moves_map_["scared"] = "install/hri_moves/include/moves/fear.txt";
 
@@ -348,7 +348,7 @@ void ChatActionServer::execute(
         if (stt_ok) {
             gtts_request->text = chatgpt_answer;
         } else {
-            gtts_request->text = "I am sorry but I can't uderstand";
+            gtts_request->text = "I am sorry, I do not uderstand. Could you repeat please?";
         }
 
         auto gtts_future = gtts_srv_client_->async_send_request(gtts_request);
