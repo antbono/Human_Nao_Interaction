@@ -29,6 +29,7 @@ class HeadTrackActionClient : public rclcpp::Node {
 
   explicit HeadTrackActionClient(const rclcpp::NodeOptions & options)
     : Node("head_track_action_client", options) {
+    
     this->client_ptr_ = rclcpp_action::create_client<ObjTrack>(
                           this,
                           "head_track");

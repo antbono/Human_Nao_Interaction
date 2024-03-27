@@ -25,6 +25,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <queue> 
 
 
 #include "nao_lola_command_msgs/msg/head_leds.hpp"
@@ -114,6 +115,7 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     moves_map_["spaventato"] = "install/hri_moves/include/moves/fear.txt";*/
     moves_map_["hello"] = "install/hri_moves/include/moves/hello.txt";
     moves_map_["hi"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["bye"] = "install/hri_moves/include/moves/hello.txt";
     //moves_map_["you"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["big"] = "install/hri_moves/include/moves/big.txt";
     moves_map_["little"] = "install/hri_moves/include/moves/little.txt";
@@ -220,10 +222,20 @@ void ChatActionServer::execute(
     double t_cur;
     double t_sleep;
 
+    std::queue<std::string> questions;
+    questions.push("Hello Nao, my name is Antonio.");
+    questions.push("Where do you live?");
+    questions.push("Tell me a joke with the word 'big.");
+    questions.push("How can you speak and listen?");
+    questions.push("How can you give me these answers?");
+    questions.push("Does all your software run on you?");
+    questions.push("Do you use any Softbank's API?");
+    questions.push("Thank you nao, see you soon!");
+
     this->eyesStatic(true);
     this->chestStatic(true);
 
-    while (rclcpp::ok()) {
+    while (rclcpp::ok() && !questions.empty()) {
 
         if (goal_handle->is_canceling()) {
             chat_result->success = true;
@@ -251,7 +263,9 @@ void ChatActionServer::execute(
         bool stt_ok = gstt_result.get()->success;
 
         if (stt_ok) {
-            recognized_speach = gstt_result.get()->message;
+            //recognized_speach = gstt_result.get()->message;
+            recognized_speach = questions.front();
+            questions.pop();
             RCLCPP_INFO(this->get_logger(), ("Recognized speech: " + recognized_speach).c_str());
 
 
