@@ -116,6 +116,9 @@ ChatActionServer::ChatActionServer(const rclcpp::NodeOptions & options)
     moves_map_["hello"] = "install/hri_moves/include/moves/hello.txt";
     moves_map_["hi"] = "install/hri_moves/include/moves/hello.txt";
     moves_map_["bye"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["byebye"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["goodbye"] = "install/hri_moves/include/moves/hello.txt";
+    moves_map_["good-bye"] = "install/hri_moves/include/moves/hello.txt";
     //moves_map_["you"] = "install/hri_moves/include/moves/you.txt";
     moves_map_["big"] = "install/hri_moves/include/moves/big.txt";
     moves_map_["little"] = "install/hri_moves/include/moves/little.txt";
@@ -223,14 +226,16 @@ void ChatActionServer::execute(
     double t_sleep;
 
     std::queue<std::string> questions;
-    questions.push("Hello Nao, my name is Antonio.");
+    questions.push("Hello NAO, my name is Antonio.");
     questions.push("Where do you live?");
-    questions.push("Tell me a joke with the word 'big.");
     questions.push("How can you speak and listen?");
     questions.push("How can you give me these answers?");
+    questions.push("Tell me something briefly about the open-source project your software is based on.");
     questions.push("Does all your software run on you?");
-    questions.push("Do you use any Softbank's API?");
-    questions.push("Thank you nao, see you soon!");
+    questions.push("Tell me a joke that contains the word: 'little'.");
+    questions.push("Tell me another joke that contains the word 'up' as soon as possible.");
+    //questions.push("Do you use any Softbank's API?");
+    questions.push("Thank you NAO. See you soon. Please say goodbye to me.");
 
     this->eyesStatic(true);
     this->chestStatic(true);

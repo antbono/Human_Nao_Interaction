@@ -56,7 +56,7 @@ HeadTrackActionServer2::HeadTrackActionServer2(const rclcpp::NodeOptions & optio
                    std::bind(&HeadTrackActionServer2::sendGoal, this));
 
 
-  this->publisher_ = this->create_publisher<std_msgs::msg::String>("action_req", 10);
+  this->publisher_ = this->create_publisher<std_msgs::msg::String>("action_req2", 10);
 
 
   this->action_server_ = rclcpp_action::create_server<HeadTrack>(
