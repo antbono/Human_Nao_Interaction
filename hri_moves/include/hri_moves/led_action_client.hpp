@@ -57,6 +57,7 @@ class LedsPlayActionClient : public rclcpp::Node {
 	void chestStatic( bool flag );
 	void earsLoop( bool flag );
 	void headLoop( bool flag );
+	void eyesLoop( bool flag );
 
   private:
 
