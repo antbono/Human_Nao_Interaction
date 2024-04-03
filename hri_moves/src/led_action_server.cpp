@@ -377,19 +377,29 @@ bool LedsPlayActionServer::loopMode(
         (leds[0] == hri_interfaces::msg::LedIndexes::LEYE && leds[1] == hri_interfaces::msg::LedIndexes::REYE)) {
         nao_lola_command_msgs::msg::RightEyeLeds right_eye_leds_msg;
         nao_lola_command_msgs::msg::LeftEyeLeds left_eye_leds_msg;
-        uint8_t c = 0;
+        short int cw = 0, cw_succ = 0;
+        short int ccw = 0, ccw_succ = 0;
+        const short int num_eye_leds = nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS;
         while (rclcpp::ok()) {
             if (goal_handle->is_canceling()) {
                 return canceled = true;
             }
-            c = (c + 1) % nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS;
-
-            for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+            
+            for (unsigned i = 0; i < num_eye_leds; ++i) {
                 right_eye_leds_msg.colors[i] = colors[i];
                 left_eye_leds_msg.colors[i] = colors[i];
             }
-            right_eye_leds_msg.colors[c] = color_off_;
-            left_eye_leds_msg.colors[c] = color_off_;
+
+            cw = (cw + 1) % num_eye_leds;
+            cw_succ = (cw+1) % num_eye_leds;
+
+            ccw = (cw != 0) ? num_eye_leds-cw : 0;
+            ccw_succ = (ccw != 0) ? ccw-1 : 7;
+
+            right_eye_leds_msg.colors[cw] = color_off_;
+            right_eye_leds_msg.colors[cw_succ] = color_off_;
+            left_eye_leds_msg.colors[ccw] = color_off_;
+            left_eye_leds_msg.colors[ccw_succ] = color_off_;
             right_eye_pub_->publish(right_eye_leds_msg);
             left_eye_pub_->publish(left_eye_leds_msg);
 
