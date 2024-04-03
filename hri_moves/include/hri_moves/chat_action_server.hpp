@@ -124,6 +124,7 @@ class ChatActionServer : public rclcpp::Node {
 	void headStatic(bool flag);
 	void headLoop(bool flag);
 	void earsLoop(bool flag);
+	void eyesLoop(bool flag);
 
 
 };

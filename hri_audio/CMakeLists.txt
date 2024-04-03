@@ -44,6 +44,7 @@ install(PROGRAMS
 
   scripts/gstt_service.py
   scripts/gstt_client.py
+  scripts/g2stt_service.py
   scripts/gtts_service.py
   scripts/gtts_client.py
   scripts/chat_service.py

@@ -294,6 +294,50 @@ void LedsPlayActionClient::earsLoop(bool flag)  {
 }
 
 
+void LedsPlayActionClient::eyesLoop(bool flag)  {
+  using namespace std::placeholders;
+
+  if (flag) {
+    if (!this->client_ptr_->wait_for_action_server()) {
+      RCLCPP_ERROR(this->get_logger(), "Action server not available after waiting");
+      rclcpp::shutdown();
+    }
+
+    auto goal_msg = LedsPlay::Goal();
+
+    goal_msg.leds = {LedIndexes::REYE, LedIndexes::LEYE};
+    goal_msg.mode = LedModes::LOOP;
+    
+    std_msgs::msg::ColorRGBA color;
+    color.r = 1.0; color.g = 1.0; color.b = 1.0;
+
+    for (unsigned i = 0; i < nao_lola_command_msgs::msg::RightEyeLeds::NUM_LEDS; ++i) {
+      goal_msg.colors[i] = color;
+    }
+
+    goal_msg.frequency = 10.0;
+
+    auto send_goal_options = rclcpp_action::Client<LedsPlay>::SendGoalOptions();
+
+    send_goal_options.goal_response_callback =
+      std::bind(&LedsPlayActionClient::goalResponseCallback, this, _1);
+
+    //send_goal_options.feedback_callback =
+    //  std::bind(&LedsPlayActionClient::feedbackCallback, this, _1, _2);
+
+    send_goal_options.result_callback =
+      std::bind(&LedsPlayActionClient::resultCallback, this, _1);
+
+    RCLCPP_INFO(this->get_logger(), "Sending goal:" );
+
+    auto goal_handle_future = client_ptr_->async_send_goal(goal_msg, send_goal_options);
+    eyes_goal_handle_ = goal_handle_future.get();
+  } else {
+    auto cancel_result_future = client_ptr_->async_cancel_goal(eyes_goal_handle_);
+  }
+}
+
+
 
 void LedsPlayActionClient::goalResponseCallback(const GoalHandleLedsPlay::SharedPtr & goal_handle) {
   if (!goal_handle) {

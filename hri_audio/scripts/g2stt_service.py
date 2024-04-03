@@ -14,19 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from google.cloud import speech
-#from google.cloud import speech_v1p1beta1 as speech
-from google.rpc import code_pb2
+import os
+
+from time import sleep
+
 from google.api_core.exceptions import GoogleAPICallError
 from google.api_core.exceptions import DeadlineExceeded
 from google.protobuf.duration_pb2 import Duration
 
+from google.cloud.speech_v2 import SpeechClient
+from google.cloud.speech_v2.types import cloud_speech
+from google.protobuf import duration_pb2  # type: ignore
+
 import rclpy
-import time
 from rclpy.node import Node
 from std_msgs.msg import String
 from hri_audio.microphone_stream import MicrophoneStream
 from std_srvs.srv import SetBool
+
 
 # bool data # e.g. for hardware enabling / disabling
 # ---
@@ -36,108 +41,127 @@ from std_srvs.srv import SetBool
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
+PROJECT_ID = os.environ["GCP_OAN_ID"]
 
-class GSTTService(Node):
+class G2STTService(Node):
     def __init__(self):
         super().__init__("gstt_srv_node")
 
-        # Create a Duration object
-        duration1 = Duration()
-        duration1.seconds=40
-        duration2 = Duration()
-        duration2.seconds=50
+        #language_code = "en-US" # a BCP-47 language tag
 
-        language_code = "en-US" # a BCP-47 language tag
-        self.client = speech.SpeechClient()
-        self.config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=RATE,
-            language_code=language_code,
-            #model="latest_short",
-            model="latest_long"
-        )
-        self.timeout = speech.StreamingRecognitionConfig.VoiceActivityTimeout(
-            speech_start_timeout=duration1,
-            speech_end_timeout=duration2
+         # Instantiates a client
+        self.client = SpeechClient()
+
+        recognition_config = cloud_speech.RecognitionConfig(
+            auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
+            language_codes=["en-US"],
+            model="long",
         )
 
-        self.streaming_config = speech.StreamingRecognitionConfig(
-            config=self.config,
-            #single_utterance=True,
-            #interim_results=True,
-            enable_voice_activity_events=True, voice_activity_timeout=self.timeout
+        # Sets the flag to enable voice activity events and timeout
+        speech_start_timeout = duration_pb2.Duration(seconds=5)
+        speech_end_timeout = duration_pb2.Duration(seconds=20)
+        voice_activity_timeout = (
+            cloud_speech.StreamingRecognitionFeatures.VoiceActivityTimeout(
+                speech_start_timeout=speech_start_timeout,
+                speech_end_timeout=speech_end_timeout,
+            )
         )
+        streaming_features = cloud_speech.StreamingRecognitionFeatures(
+            enable_voice_activity_events=True, voice_activity_timeout=voice_activity_timeout
+        )
+
+        streaming_config = cloud_speech.StreamingRecognitionConfig(
+            config=recognition_config, streaming_features=streaming_features
+        )
+
+        self.config_request = cloud_speech.StreamingRecognizeRequest(
+            recognizer=f"projects/{PROJECT_ID}/locations/global/recognizers/_",
+            streaming_config=streaming_config,
+        )    
+
 
         self.srv = self.create_service(SetBool, "gstt_service", self.gstt_callback)
 
         #self.stream = MicrophoneStream(RATE, CHUNK)
+        loop_rate=2
 
+        self._loop_rate = self.create_rate(loop_rate, self.get_clock())
 
-
-        self.get_logger().info('GSTTService initializedaa')
-
+        self.get_logger().info('G2STTService initialized')
 
     
     def gstt_callback(self, sRequest, sResponse):
         
-        self.get_logger().info('GSTTService Incoming request')
+        self.get_logger().debug('G2STTService Incoming request')
 
         if sRequest.data == True:
 
             try:
-                sResponse.success=False
+                sResponse.success = False
 
                 stream = MicrophoneStream(RATE, CHUNK)
                 stream = stream.__enter__()
                 audio_generator = stream.generator()
-                requests = (
-                    speech.StreamingRecognizeRequest(audio_content=content)
-                    for content in audio_generator
-                )
 
+                audio_requests = (
+                    cloud_speech.StreamingRecognizeRequest(audio=content) for content in audio_generator
+                )
                 self.get_logger().info('requests created')
-                responses_iterator = self.client.streaming_recognize(self.streaming_config, requests)
+
+                #def requests(config: cloud_speech.RecognitionConfig, audio: list) -> list:
+                #    yield config
+                #    for message in audio:
+                #        self._loop_rate.sleep()
+                #        yield message
+
+                # Transcribes the audio into text
+                self.get_logger().info('creating responses')
+                responses_iterator = self.client.streaming_recognize( 
+                    #requests=requests(self.config_request, audio_requests)
+                    config=self.config_request, requests=audio_requests
+                )
                 self.get_logger().info('responses created')
                 
-                start_time = time.time()
-                self.get_logger().info('start_time')
-                timeout_seconds = 30
                 final_transcript_received = False
 
+                #responses = []
                 for response in responses_iterator:         #BLOCKING!
                     self.get_logger().info('responses loop')
-                    if time.time() - start_time > timeout_seconds:
-                        self.get_logger().error("Timeout: No final result after %d seconds." % timeout_seconds)
-                        sResponse.success = False
-                        sResponse.message = "timeout"
-                        break  # Exit the loop if we've reached the timeout without a final result
-                    self.get_logger().info('timeout checked')    
+
+                    #responses.append(response)
+                    if (
+                        response.speech_event_type
+                        == cloud_speech.StreamingRecognizeResponse.SpeechEventType.SPEECH_ACTIVITY_BEGIN
+                    ):
+                        self.get_logger().warn('Speech Started.')
+                    if (
+                        response.speech_event_type
+                        == cloud_speech.StreamingRecognizeResponse.SpeechEventType.SPEECH_ACTIVITY_END
+                    ):
+                        self.get_logger().warn('Speech Ended.')
 
                     # Check if there are any results in this response
                     if not response.results:
-                        continue
-                    self.get_logger().info('results checked')     
-                        
-                    # The first result is the most relevant for single utterance mode
+                        continue    
+    
+                     # The first result is the most relevant 
                     result = response.results[0]
 
-                    # Check if the result is final
                     if result.is_final:
                         final_transcript_received = True
-                        # Extract the top alternative of the final result
                         top_transcript = result.alternatives[0].transcript
                         self.get_logger().info(f"Final transcript: {top_transcript}")
                         sResponse.success = True
                         sResponse.message = top_transcript
                         break  # Exit the loop since we've received a final transcript
-                    self.get_logger().info('final result checked')
 
                     if not final_transcript_received:
                         self.get_logger().error("No final transcript received.")
                         sResponse.success = False
                         sResponse.message = "No final transcript received."
 
-                self.get_logger().debug('GSTTService complete request')
+                self.get_logger().debug('G2STTService complete request')
                 return sResponse
 
             except Exception as e:
@@ -147,8 +171,6 @@ class GSTTService(Node):
 
             finally:
                 stream.__exit__(stream, stream, stream)
-
-
 
             #After stream close
             #sResponse.success = False
@@ -239,7 +261,7 @@ class GSTTService(Node):
 def main():
     rclpy.init()
 
-    stt_service = GSTTService()
+    stt_service = G2STTService()
 
     rclpy.spin(stt_service)
 
